@@ -1,3 +1,4 @@
+//check the dirty value
 function Scope() {
     this.$$watchers = []
     this.$$lastDirtyWatch = null
@@ -40,7 +41,7 @@ Scope.prototype.$digest = function() {
     var ttl = 10
     do{
         dirty = this.$digestOne
-        while(dirty || !(ttl--)){
+        while(dirty && !(ttl--)){
             throw "10 digest iteration reached"
         }
     }while(dirty)
