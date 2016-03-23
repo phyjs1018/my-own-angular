@@ -1,8 +1,10 @@
-//give up unstable digest
+//scope phase
 class Scope {
     constructor() {
         this.$$watchers = []
         this.$$lastDirtyWatch = null
+        this.$$asyncQueue = []
+        this.$$phase = null
     }
     
     $watch(watcherFn, listenerFn, valueEq) {
@@ -48,11 +50,56 @@ class Scope {
     $digest() {
         let ttl = 10
         let dirty
+        this.$$lastDirtyWatch = null
+        this.$beginPhase('$digest')
         do{
+            while(this.$$asyncQueue.length) {
+                let asyncTask = this.$$asyncQueue.shift()
+                asyncTask.scope.$eval(asyncTask.expression)
+            }
             dirty = this.$digestOnce()
-            while(dirty && !(ttl--)){
+            while(dirty ||this.$$asyncQueue.length && !(ttl--)){
                 throw '10 digest iteration reached'
             }
-        }while(dirty)
+        }while(dirty || this.$$asyncQueue.length)
+        
+        this.$cleanPhase()
+    }
+    
+    $eval(expr, locals) {
+        return expr(this, locals)
+    }
+    
+    $apply(expr) {
+        try {
+            this.$beginPhase('$apply')
+            this.$eval(expr)
+        } finally {
+            this.$cleanPhase()
+            this.$digest
+        }
+    }
+    
+    $evalAsync(expr) {
+        let self = this
+        if(!self.$$phase && !self.$$asyncQueue.length) {
+            setTimeout(() => {
+                if(self.$$asyncQueue.length){
+                    self.$digest
+                }
+            }, 0)
+        }
+        this.$$asyncQueue.push({scope: this, expression: expr})
+    }
+    
+    $beginPhase(phase) {
+        if(this.$$phase) {
+            throw this.$$phase + 'already in process'
+        }
+        this.$$phase = phase
+    }
+    
+    $cleanPhase() {
+        this.$$phase = null
     }
 }

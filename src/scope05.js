@@ -1,4 +1,4 @@
-//give up unstable digest
+//$apply $eval
 class Scope {
     constructor() {
         this.$$watchers = []
@@ -54,5 +54,17 @@ class Scope {
                 throw '10 digest iteration reached'
             }
         }while(dirty)
+    }
+    
+    $eval(expr, locals) {
+        return expr(this, locals)
+    }
+    
+    $apply(expr) {
+        try {
+            this.$eval(expr)
+        } finally {
+            this.$digest
+        }
     }
 }

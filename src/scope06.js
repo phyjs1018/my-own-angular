@@ -1,8 +1,9 @@
-//give up unstable digest
+//$evalAsync
 class Scope {
     constructor() {
         this.$$watchers = []
         this.$$lastDirtyWatch = null
+        this.$$asyncQueue = []
     }
     
     $watch(watcherFn, listenerFn, valueEq) {
@@ -49,10 +50,30 @@ class Scope {
         let ttl = 10
         let dirty
         do{
+            while(this.$$asyncQueue.length) {
+                let asyncTask = this.$$asyncQueue.shift()
+                asyncTask.scope.$eval(asyncTask.expression)
+            }
             dirty = this.$digestOnce()
-            while(dirty && !(ttl--)){
+            while(dirty ||this.$$asyncQueue.length && !(ttl--)){
                 throw '10 digest iteration reached'
             }
-        }while(dirty)
+        }while(dirty || this.$$asyncQueue.length)
+    }
+    
+    $eval(expr, locals) {
+        return expr(this, locals)
+    }
+    
+    $apply(expr) {
+        try {
+            this.$eval(expr)
+        } finally {
+            this.$digest
+        }
+    }
+    
+    $evalAsync(expr) {
+        this.$$asyncQueue.push({scope: this, expression: expr})
     }
 }

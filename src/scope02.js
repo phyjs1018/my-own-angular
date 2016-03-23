@@ -1,3 +1,4 @@
+//$watch  $digest
 function Scope() {
     this.$$watchers = []  //double-dollar signified that this variable should be considered private to the angular framework
     

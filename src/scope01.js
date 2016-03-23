@@ -1,3 +1,5 @@
-function sayHello() {
-    return 'hello, world!'
+class Scope {
+    constructor() {
+        return 'hello world'
+    }
 }
