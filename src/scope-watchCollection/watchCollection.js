@@ -40,7 +40,6 @@ class Scope {
     $digestOnce() {
         let self = this
         let dirty
-        let continueLoop = true
         this.$$everyScope((scope) =>{
           let newValue, oldValue
         _.forEachRight(this.$$watchers, (watcher) => {
@@ -57,7 +56,6 @@ class Scope {
                                  scope)
                 dirty = true
             } else if(scope.$$lastDirtyWatch == watcher){
-                continueLoop = false
                 return false
             }
           }
@@ -65,9 +63,7 @@ class Scope {
       } catch(err) {
         console.log(err)
       }
-    })
-       return continueLoop
-  )
+    }))
         return dirty
     }
 
@@ -175,14 +171,26 @@ class Scope {
       child.$$children = []
       return child
     }
-
-    $$everyScope(fn) {
-      if(fn(this)) {
-        return this.$$children.every((child) => {
-          return child.$$everyScope(fn)
-        })
-      } else {
-        return false
-      }
+    
+    $watchCollection() {
+        let newValue, oldValue
+        let changeCount = 0
+        let self = this
+        let intervalWatchFn = (scope) => {
+            newValue = watchFn(scope)
+            
+            if(!$$areEqual(newValue, oldValue, false)) {
+                changecount++
+            }
+            oldValue = newValue
+            
+            return changecount
+        }
+        
+        let intervalListenerFn = () => {
+            listenerFn(newValue, oldValue, self)
+        }
+        
+        return this.$watch(intervalWatchFn, intervalListenerFn)
     }
 }
