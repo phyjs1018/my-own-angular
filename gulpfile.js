@@ -1,7 +1,7 @@
 const gulp = require('gulp')
 const babel = require('gulp-babel')
 
-gulp.task('default', () => {
+gulp.task('compile', () => {
   return gulp.src('src/**/*.js')
   .pipe(babel({
     presets: ['es2015']
@@ -9,4 +9,4 @@ gulp.task('default', () => {
   .pipe(gulp.dest('dist'))
 })
 
-gulp.watch('src/**/*.js', ['default'])
+gulp.watch('src/**/*.js', ['compile'])
