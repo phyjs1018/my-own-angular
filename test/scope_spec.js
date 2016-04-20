@@ -1,4 +1,4 @@
-describe('scope', function() {
+xdescribe('scope', function() {
   it('can be constructed used as an object', function() {
     var scope = new Scope()
     scope.aProperty = 1
