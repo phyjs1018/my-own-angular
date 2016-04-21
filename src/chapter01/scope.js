@@ -1,14 +1,14 @@
 class Scope {
 	constructor() {
 		this.$$watchers = []
+		this.initWatchVal = () => {}
 	}
 
 	$watch(watchFn, listenerFn) {
-		let initWatchVal = () => {}
 		let watcher = {
 			watchFn: watchFn,
 			listenerFn: listenerFn,
-			last: initWatchVal
+			last: this.initWatchVal
 		}
 		this.$$watchers.push(watcher)
 	}
@@ -16,12 +16,12 @@ class Scope {
 	$digest() {
 		let self = this
 		let newValue, oldValue
-		_forEach(this.$$watchers, (watcher) => {
+		_.forEach(this.$$watchers, (watcher) => {
 			newValue = watcher.watchFn(self)
 			oldValue = watcher.last
 			if(newValue !== oldValue) {
 				watcher.listenerFn(newValue, 
-						(oldValue === initWatchVal ? newValue : oldValue), 
+						(oldValue === self.initWatchVal ? newValue : oldValue), 
 							self)
 			}
 		})

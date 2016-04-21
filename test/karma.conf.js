@@ -16,7 +16,9 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       './dist/**/*.js',
-      './test/**/*.js'
+      './test/**/*.js',
+      './node_modules/lodash/lodash.js',
+      './node_modules/jquery/dist/jquery.js'
     ],
 
     // web server port
