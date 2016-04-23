@@ -12,6 +12,8 @@ class Scope {
 			last: this.initWatchVal
 		}
 		this.$$watchers.push(watcher)
+		//does not end the digest so that the new watches are not run
+		this.lastDirtyWatch = null
 	}
 	
 	$digest() {

@@ -133,5 +133,25 @@ describe('scope', function() {
 			scope.$digest()
 			expect(watchExecutions).toBe(301)
 		})
+
+		it('does not end digest so that new watchers are not run', function() {
+			scope.aValue = 'abc'
+			scope.count = 0
+
+			scope.$watch(
+				function(scope) {
+					return scope.aValue
+				}, function(newValue, oldValue, scope) {
+					scope.$watch(
+						function(scope) {
+							return scope.aValue
+						}, function(newValue, oldValue, scope) {
+							scope.count++
+						})
+				})
+			scope.$digest()
+
+			expect(scope.count).toBe(1)
+		})
   })
 })
