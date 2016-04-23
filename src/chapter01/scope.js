@@ -5,10 +5,11 @@ class Scope {
 		this.$$lastDirtyWatch = null
 	}
 
-	$watch(watchFn, listenerFn) {
+	$watch(watchFn, listenerFn, valueEq) {
 		let watcher = {
 			watchFn: watchFn,
 			listenerFn: listenerFn || function() {},
+			valueEq: !!valueEq,
 			last: this.initWatchVal
 		}
 		this.$$watchers.push(watcher)
@@ -16,6 +17,19 @@ class Scope {
 		this.lastDirtyWatch = null
 	}
 	
+	$$areEqual(newValue, oldValue, valueEq) {
+		if(valueEq) {
+			//console.log(newValue)
+			//console.log(oldValue)
+			return _.isEqual(newValue, oldValue)
+		} else {
+			return newValue === oldValue ||
+			    //solve the corn case for NaN
+						 (typeof newValue === 'number' && typeof oldValue === 'number' &&
+						 	isNaN(newValue) && isNaN(oldValue))
+		}
+	}
+
 	$digest() {
 		let ttl = 10
 		let dirty
@@ -35,9 +49,9 @@ class Scope {
 		_.forEach(self.$$watchers, (watcher) => {
 			newValue = watcher.watchFn(self)
 			oldValue = watcher.last
-			if(newValue !== oldValue) {
+			if(!self.$$areEqual(newValue, oldValue, watcher.valueEq)) {
 				self.lastDirtyWatch = watcher
-				watcher.last = newValue
+				watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
 				watcher.listenerFn(newValue, 
 					//we'd rather not leak that function outside of scope.js
 						(oldValue === self.initWatchVal ? newValue : oldValue), 
