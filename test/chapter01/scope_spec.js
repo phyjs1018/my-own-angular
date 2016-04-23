@@ -108,5 +108,30 @@ describe('scope', function() {
 			//it will call that function for us, so that it can check that it throws an exception like we expect
 			expect((function() { scope.$digest()})).toThrow()
 		})
+
+		it('ends the digest when the last watch is clean', function() {
+			scope.array = _.range(100)
+			//console.log(scope.array)
+			var watchExecutions = 0
+
+			_.times(100, function(i) {
+				scope.$watch(
+					function(scope) {
+						watchExecutions++
+						return scope.array[i]
+					},
+					function(newValue, oldValueGiven, scope) {
+
+					}
+				)
+			})
+
+			scope.$digest()
+			expect(watchExecutions).toBe(200)
+
+			scope.array[0] = 420
+			scope.$digest()
+			expect(watchExecutions).toBe(301)
+		})
   })
 })
