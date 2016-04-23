@@ -64,4 +64,8 @@ class Scope {
 		})
 		return dirty
 	}
+
+	$eval(expression, locals) {
+		return expression(this, locals)
+	}
 }
