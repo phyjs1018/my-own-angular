@@ -92,6 +92,15 @@ class Scope {
 	}
 	
 	$evalAsync(expr) {
+		let self = this
+		//the $evalAsync function can now check the current phase of the scope, and if there isn't one, schedule the digest
+		if(!self.$$phase && !self.$$asyncQueue.length) {
+			setTimeout(function() {
+				if(self.$$asyncQueue.length) {
+					self.$digest()
+				}
+			}, 0)
+		}
 		this.$$asyncQueue.push({scope: this, expression: expr})
 	}
 	
