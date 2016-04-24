@@ -43,7 +43,8 @@ class Scope {
 				var asyncTask = this.$$asyncQueue.shift()
 				asyncTask.scope.$eval(asyncTask.expression)
 			}
-			dirty = this.$digestOnce()		
+			dirty = this.$digestOnce()
+			//we need to do is also check the status of the async queue in our TTL check
 			if((dirty || this.$$asyncQueue.length) && !(ttl--)) {
 				throw "10 digest iteration reached"
 			}
