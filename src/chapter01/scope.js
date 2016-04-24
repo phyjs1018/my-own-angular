@@ -44,10 +44,10 @@ class Scope {
 				asyncTask.scope.$eval(asyncTask.expression)
 			}
 			dirty = this.$digestOnce()		
-			if(dirty && !(ttl--)) {
+			if((dirty || this.$$asyncQueue.length) && !(ttl--)) {
 				throw "10 digest iteration reached"
 			}
-		} while (dirty)
+		} while (dirty || this.$$asyncQueue.length)
 	}
 
 	$digestOnce() {
