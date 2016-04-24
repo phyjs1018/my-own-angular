@@ -309,5 +309,24 @@ describe('scope', function() {
 			expect(scope.phaseInListenerFunction).toBe('$digest')
 			expect(scope.phaseInApplyFunction).toBe('$apply')
 		})
+		
+		it('schedules a digest in $evalAsync', function() {
+			scope.aValue = 'abc'
+			scope.counter = 0
+			
+			scope.$watch(
+				function(scope) {return scope.aValue},
+				function(newValue, oldValue, scope) {
+					scope.counter++
+				}
+			)
+			
+			scope.$evalAsync(function(scope) {})
+			
+			expect(scope.counter).toBe(0)
+			setTimeout(function() {
+				expect(scope.counter).toBe(1)
+			}, 50)
+		})
   })
 })
