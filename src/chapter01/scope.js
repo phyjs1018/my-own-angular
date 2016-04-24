@@ -68,4 +68,12 @@ class Scope {
 	$eval(expression, locals) {
 		return expression(this, locals)
 	}
+
+	$apply(expression) {
+		try {
+			return this.$eval(expression)
+		} finally {
+			scope.$digest()
+		}
+	}
 }
