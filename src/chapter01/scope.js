@@ -1,8 +1,12 @@
+//set the default value of watch.last and make it unqiue
+//we would rather not leak that function outside of scope
+const initWatchVal = () => {}
+
 class Scope {
 	constructor() {
 		this.$$watchers = []
-		this.initWatchVal = () => {}
 		this.$$lastDirtyWatch = null
+		this.$$asyncQueue = []
 	}
 
 	$watch(watchFn, listenerFn, valueEq) {
@@ -10,7 +14,7 @@ class Scope {
 			watchFn: watchFn,
 			listenerFn: listenerFn || function() {},
 			valueEq: !!valueEq,
-			last: this.initWatchVal
+			last: initWatchVal
 		}
 		this.$$watchers.push(watcher)
 		//does not end the digest so that the new watches are not run
@@ -35,8 +39,11 @@ class Scope {
 		let dirty
 		this.lastDirtyWatch = null
 		do {
-			dirty = this.$digestOnce()
-			
+			while (this.$$asyncQueue.length) {
+				var asyncTask = this.$$asyncQueue.shift()
+				asyncTask.scope.$eval(asyncTask.expression)
+			}
+			dirty = this.$digestOnce()		
 			if(dirty && !(ttl--)) {
 				throw "10 digest iteration reached"
 			}
@@ -54,7 +61,7 @@ class Scope {
 				watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
 				watcher.listenerFn(newValue, 
 					//we'd rather not leak that function outside of scope.js
-						(oldValue === self.initWatchVal ? newValue : oldValue), 
+						(oldValue === initWatchVal ? newValue : oldValue), 
 							self)
 				dirty = true
 			} else if (self.lastDirtyWatch === watcher) {
@@ -73,7 +80,11 @@ class Scope {
 		try {
 			return this.$eval(expression)
 		} finally {
-			scope.$digest()
+			this.$digest()
 		}
+	}
+	
+	$evalAsync(expr) {
+		this.$$asyncQueue.push({scope: this, expression: expr})
 	}
 }
