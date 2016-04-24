@@ -7,6 +7,7 @@ class Scope {
 		this.$$watchers = []
 		this.$$lastDirtyWatch = null
 		this.$$asyncQueue = []
+		this.$$phase = null
 	}
 
 	$watch(watchFn, listenerFn, valueEq) {
@@ -38,6 +39,7 @@ class Scope {
 		let ttl = 10
 		let dirty
 		this.lastDirtyWatch = null
+		this.$beginPhase('$digest')
 		do {
 			while (this.$$asyncQueue.length) {
 				var asyncTask = this.$$asyncQueue.shift()
@@ -46,9 +48,11 @@ class Scope {
 			dirty = this.$digestOnce()
 			//we need to do is also check the status of the async queue in our TTL check
 			if((dirty || this.$$asyncQueue.length) && !(ttl--)) {
+				this.$clearPhase()
 				throw "10 digest iteration reached"
 			}
 		} while (dirty || this.$$asyncQueue.length)
+		this.$clearPhase()
 	}
 
 	$digestOnce() {
@@ -79,13 +83,26 @@ class Scope {
 
 	$apply(expression) {
 		try {
+			this.$beginPhase('$apply')
 			return this.$eval(expression)
 		} finally {
+			this.$clearPhase()
 			this.$digest()
 		}
 	}
 	
 	$evalAsync(expr) {
 		this.$$asyncQueue.push({scope: this, expression: expr})
+	}
+	
+	$beginPhase(phase) {
+		if(this.$$phase) {
+			throw this.$$phase + 'already in progress'
+		}
+		this.$$phase = phase
+	}
+	
+	$clearPhase() {
+		this.$$phase = null
 	}
 }
