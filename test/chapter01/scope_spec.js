@@ -249,5 +249,40 @@ describe('scope', function() {
 			expect(scope.asyncEvaluated).toBe(true)
 			expect(scope.asyncEvaluatedImmediately).toBe(false)
 		})
+		
+		it('executes $evalAsync functions even when not dirty', function() {
+			scope.aValue = [1, 2, 3]
+			scope.asyncEvaluatedTimes = 0
+			
+			scope.$watch(
+				function(scope) {
+					if(scope.asyncEvaluatedTimes < 2) {
+						scope.$evalAsync(function() {
+							scope.asyncEvaluatedTimes++
+						})
+					}
+					return scope.aValue
+				},
+				function(newValue, oldValue, scope) {}
+			)
+			
+			scope.$digest()
+			
+			expect(scope.asyncEvaluatedTimes).toBe(2)
+		})
+		
+		it('eventually hats $evalAsyncs added by watches', function() {
+			scope.aValue = [1, 2, 3]
+			
+			scope.$watch(
+				function(scope) {
+					scope.$evalAsync(function(scope) {})
+					return scope.aValue
+				},
+				function(newValue, oldValue, scope) {}
+			)
+			
+			expect((function() {scope.$digest()})).toThrow()
+		})
   })
 })
