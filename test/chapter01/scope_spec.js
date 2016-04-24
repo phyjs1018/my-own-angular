@@ -223,11 +223,31 @@ describe('scope', function() {
 
 			scope.$digest()
 			expect(scope.counter).toBe(1)
-
+			
 			scope.$apply(function(scope) {
-				return scope.aValue = 'someOtherValue'
+				scope.aValue = 'someOtherValue'
 			})
 			expect(scope.counter).toBe(2)
+		})
+		
+		it('executes $evalAsync function later in the same cycle', function() {
+			scope.aValue = [1, 2, 3]
+			scope.asyncEvaluated = false
+			scope.asyncEvaluatedImmediately = false
+			
+			scope.$watch(
+				function(scope) {return scope.aValue},
+				function(newValue, oldValue, scope) {
+					scope.$evalAsync(function(scope) {
+						scope.asyncEvaluated = true
+					})
+				  	scope.asyncEvaluatedImmediately = scope.asyncEvaluated
+				}
+			)
+			
+			scope.$digest()
+			expect(scope.asyncEvaluated).toBe(true)
+			expect(scope.asyncEvaluatedImmediately).toBe(false)
 		})
   })
 })

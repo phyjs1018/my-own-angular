@@ -1,5 +1,5 @@
 describe('hello.js test', function() {
   it('say hello', function() {
-    expect(sayHello()).toBe('hello world')
+    expect(hello()).toBe('hello world')
   })
 })
