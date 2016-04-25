@@ -7,6 +7,8 @@ class Scope {
 		this.$$watchers = []
 		this.$$lastDirtyWatch = null
 		this.$$asyncQueue = []
+		this.$$applyAsyncQueue = []
+		this.$$applyAsyncId = null
 		this.$$phase = null
 	}
 
@@ -102,6 +104,24 @@ class Scope {
 			}, 0)
 		}
 		this.$$asyncQueue.push({scope: this, expression: expr})
+	}
+
+	$applyAsync(expr) {
+		let self = this
+		self.$$applyAsyncQueue.push(function() {
+			self.$eval(expr)
+		})
+
+		if(self.$$applyAsyncId === null) {
+			self.$$applyAsyncId = setTimeout(function() {
+				self.$apply(function() {
+					while(self.$$applyAsyncQueue.length) {
+						self.$$applyAsyncQueue.shift()()
+					}
+					self.$$applyAsyncId = null
+				})
+			}, 0)
+		}
 	}
 	
 	$beginPhase(phase) {
