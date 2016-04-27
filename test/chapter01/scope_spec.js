@@ -2,7 +2,7 @@ describe('scope', function() {
   it('can be constructed used as an object', function() {
     var scope = new Scope()
     scope.aProperty = 1
-    
+
     expect(scope.aProperty).toBe(1)
   })
 
@@ -57,10 +57,10 @@ describe('scope', function() {
 
       expect(watchFn).toHaveBeenCalled()
     })
-		
+
 		it('triggers chaine watchers in the same digest', function() {
 			scope.name = 'jane'
-			
+
 			scope.$watch(
 				function(scope) {return scope.nameUpper},
 				function(newValue, oldValue, scope) {
@@ -69,7 +69,7 @@ describe('scope', function() {
 					}
 				}
 			)
-			
+
 			scope.$watch(
 				function(scope) {return scope.name},
 				function(newValue, oldValue, scope) {
@@ -78,33 +78,33 @@ describe('scope', function() {
 					}
 				}
 			)
-			
+
 			scope.$digest()
 			expect(scope.initial).toBe('J.')
-			
+
 			scope.name = 'bob'
 			scope.$digest()
 			expect(scope.initial).toBe('B.')
 		})
-		
+
 		it('gives up on the watches after 10 iterations', function() {
 			scope.counterA = 0
 			scope.counterB = 0
-			
+
 			scope.$watch(
 				function(scope) {return scope.counterA},
 				function(newValue, oldValue, scope) {
 					scope.counterB++
 				}
 			)
-			
+
 			scope.$watch(
 				function(scope) {return scope.counterB},
 				function(newValue, oldValue, scope) {
 					scope.counterA++
 				}
 			)
-			
+
 			//it will call that function for us, so that it can check that it throws an exception like we expect
 			expect((function() { scope.$digest()})).toThrow()
 		})
@@ -223,18 +223,18 @@ describe('scope', function() {
 
 			scope.$digest()
 			expect(scope.counter).toBe(1)
-			
+
 			scope.$apply(function(scope) {
 				scope.aValue = 'someOtherValue'
 			})
 			expect(scope.counter).toBe(2)
 		})
-		
+
 		it('executes $evalAsync function later in the same cycle', function() {
 			scope.aValue = [1, 2, 3]
 			scope.asyncEvaluated = false
 			scope.asyncEvaluatedImmediately = false
-			
+
 			scope.$watch(
 				function(scope) {return scope.aValue},
 				function(newValue, oldValue, scope) {
@@ -244,16 +244,16 @@ describe('scope', function() {
 				  	scope.asyncEvaluatedImmediately = scope.asyncEvaluated
 				}
 			)
-			
+
 			scope.$digest()
 			expect(scope.asyncEvaluated).toBe(true)
 			expect(scope.asyncEvaluatedImmediately).toBe(false)
 		})
-		
+
 		it('executes $evalAsync functions even when not dirty', function() {
 			scope.aValue = [1, 2, 3]
 			scope.asyncEvaluatedTimes = 0
-			
+
 			scope.$watch(
 				function(scope) {
 					if(scope.asyncEvaluatedTimes < 2) {
@@ -265,15 +265,15 @@ describe('scope', function() {
 				},
 				function(newValue, oldValue, scope) {}
 			)
-			
+
 			scope.$digest()
-			
+
 			expect(scope.asyncEvaluatedTimes).toBe(2)
 		})
-		
+
 		it('eventually hats $evalAsyncs added by watches', function() {
 			scope.aValue = [1, 2, 3]
-			
+
 			scope.$watch(
 				function(scope) {
 					scope.$evalAsync(function(scope) {})
@@ -281,16 +281,16 @@ describe('scope', function() {
 				},
 				function(newValue, oldValue, scope) {}
 			)
-			
+
 			expect((function() {scope.$digest()})).toThrow()
 		})
-		
+
 		it('has a $$Phase field whose value is current digest phase', function() {
 			scope.aValue = [1, 2, 3]
 			scope.phaseInWatchFunction = undefined
 			scope.phaseInListenerFunction = undefined
 			scope.phaseInApplyFunction = undefined
-			
+
 			scope.$watch(
 				function(scope) {
 					scope.phaseInWatchFunction = scope.$$phase
@@ -300,29 +300,29 @@ describe('scope', function() {
 					scope.phaseInListenerFunction = scope.$$phase
 				}
 			)
-			
+
 			scope.$apply(function(scope) {
 				scope.phaseInApplyFunction = scope.$$phase
 			})
-			
+
 			expect(scope.phaseInWatchFunction).toBe('$digest')
 			expect(scope.phaseInListenerFunction).toBe('$digest')
 			expect(scope.phaseInApplyFunction).toBe('$apply')
 		})
-		
+
 		it('schedules a digest in $evalAsync', function() {
 			scope.aValue = 'abc'
 			scope.counter = 0
-			
+
 			scope.$watch(
 				function(scope) {return scope.aValue},
 				function(newValue, oldValue, scope) {
 					scope.counter++
 				}
 			)
-			
+
 			scope.$evalAsync(function(scope) {})
-			
+
 			expect(scope.counter).toBe(0)
 			setTimeout(function() {
 				expect(scope.counter).toBe(1)
@@ -394,5 +394,42 @@ describe('scope', function() {
 				expect(scope.counter).toBe(2)
 			}, 50)
 		})
+
+    it('runs a $$postDigest function after each digest', function() {
+      scope.counter = 0
+
+      scope.$$postDigest(function() {
+        scope.counter++
+      })
+
+      expect(scope.counter).toBe(0)
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+
+      scope.$digest()
+      expect(scope.counter).toBe(1)
+    })
+
+    it('does not include $$postDigest in the digest', function() {
+      scope.aValue = 'origin value'
+
+      scope.$$postDigest(function() {
+        scope.aValue = 'changed value'
+      })
+
+      scope.$watch(
+        function(scope) { return scope.aValue },
+        function(newValue, oldValue, scope) {
+          scope.watchValue = newValue
+        }
+      )
+
+      scope.$digest()
+      expect(scope.watchValue).toBe('origin value')
+
+      scope.$digest()
+      expect(scope.watchValue).toBe('changed value')
+    })
   })
 })
