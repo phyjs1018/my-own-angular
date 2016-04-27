@@ -5,9 +5,10 @@ const initWatchVal = () => {}
 class Scope {
 	constructor() {
 		this.$$watchers = []
-		this.$$lastDirtyWatch = null
 		this.$$asyncQueue = []
 		this.$$applyAsyncQueue = []
+		this.$$postDigestQueue = []
+		this.$$lastDirtyWatch = null
 		this.$$applyAsyncId = null
 		this.$$phase = null
 	}
@@ -23,7 +24,7 @@ class Scope {
 		//does not end the digest so that the new watches are not run
 		this.lastDirtyWatch = null
 	}
-	
+
 	$$areEqual(newValue, oldValue, valueEq) {
 		if(valueEq) {
 			//console.log(newValue)
@@ -42,6 +43,12 @@ class Scope {
 		let dirty
 		this.lastDirtyWatch = null
 		this.$beginPhase('$digest')
+
+		if(this.$$applyAsyncId) {
+			clearTimeout(this.$$applyAsyncId)
+			this.$$flushApplyAsync()
+		}
+
 		do {
 			while (this.$$asyncQueue.length) {
 				var asyncTask = this.$$asyncQueue.shift()
@@ -55,6 +62,10 @@ class Scope {
 			}
 		} while (dirty || this.$$asyncQueue.length)
 		this.$clearPhase()
+
+		while (this.$$postDigestQueue.length) {
+			this.$$postDigestQueue.shift()()
+		}
 	}
 
 	$digestOnce() {
@@ -66,9 +77,9 @@ class Scope {
 			if(!self.$$areEqual(newValue, oldValue, watcher.valueEq)) {
 				self.lastDirtyWatch = watcher
 				watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
-				watcher.listenerFn(newValue, 
+				watcher.listenerFn(newValue,
 					//we'd rather not leak that function outside of scope.js
-						(oldValue === initWatchVal ? newValue : oldValue), 
+						(oldValue === initWatchVal ? newValue : oldValue),
 							self)
 				dirty = true
 			} else if (self.lastDirtyWatch === watcher) {
@@ -92,7 +103,11 @@ class Scope {
 			this.$digest()
 		}
 	}
-	
+
+	$$postDigest(fn) {
+		this.$$postDigestQueue.push(fn)
+	}
+
 	$evalAsync(expr) {
 		let self = this
 		//the $evalAsync function can now check the current phase of the scope, and if there isn't one, schedule the digest
@@ -114,23 +129,25 @@ class Scope {
 
 		if(self.$$applyAsyncId === null) {
 			self.$$applyAsyncId = setTimeout(function() {
-				self.$apply(function() {
-					while(self.$$applyAsyncQueue.length) {
-						self.$$applyAsyncQueue.shift()()
-					}
-					self.$$applyAsyncId = null
-				})
+				self.$apply(_.bind(self.$$flushApplyAsync, self))
 			}, 0)
 		}
 	}
-	
+
+	$$flushApplyAsync() {
+		while(this.$$applyAsyncQueue.length) {
+			this.$$applyAsyncQueue.shift()()
+		}
+		this.$$applyAsyncId = null
+	}
+
 	$beginPhase(phase) {
 		if(this.$$phase) {
 			throw this.$$phase + 'already in progress'
 		}
 		this.$$phase = phase
 	}
-	
+
 	$clearPhase() {
 		this.$$phase = null
 	}
