@@ -14,15 +14,24 @@ class Scope {
 	}
 
 	$watch(watchFn, listenerFn, valueEq) {
+		let self = this
 		let watcher = {
 			watchFn: watchFn,
 			listenerFn: listenerFn || function() {},
 			valueEq: !!valueEq,
 			last: initWatchVal
 		}
-		this.$$watchers.push(watcher)
+		this.$$watchers.unshift(watcher)
 		//does not end the digest so that the new watches are not run
 		this.lastDirtyWatch = null
+
+		return function() {
+			var index = self.$$watchers.indexOf(watcher)
+			if(index >= 0) {
+				self.$$watchers.splice(index, 1)
+				self.$$lastDirtyWatch = null
+			}
+		}
 	}
 
 	$$areEqual(newValue, oldValue, valueEq) {
@@ -51,10 +60,15 @@ class Scope {
 
 		do {
 			while (this.$$asyncQueue.length) {
-				var asyncTask = this.$$asyncQueue.shift()
-				asyncTask.scope.$eval(asyncTask.expression)
+				try {
+					var asyncTask = this.$$asyncQueue.shift()
+					asyncTask.scope.$eval(asyncTask.expression)
+				} catch (e) {
+					console.error(e)
+				}
 			}
 			dirty = this.$digestOnce()
+			//console.log(dirty)
 			//we need to do is also check the status of the async queue in our TTL check
 			if((dirty || this.$$asyncQueue.length) && !(ttl--)) {
 				this.$clearPhase()
@@ -64,14 +78,20 @@ class Scope {
 		this.$clearPhase()
 
 		while (this.$$postDigestQueue.length) {
-			this.$$postDigestQueue.shift()()
+			try {
+				this.$$postDigestQueue.shift()()
+			} catch(e) {
+				console.error();(e)
+			}
 		}
 	}
 
 	$digestOnce() {
 		let self = this
 		let newValue, oldValue, dirty
-		_.forEach(self.$$watchers, (watcher) => {
+		_.forEachRight(self.$$watchers, (watcher) => {
+		 try{
+			if(watcher) {
 			newValue = watcher.watchFn(self)
 			oldValue = watcher.last
 			if(!self.$$areEqual(newValue, oldValue, watcher.valueEq)) {
@@ -86,9 +106,13 @@ class Scope {
 				//short-circuiting the digest when the last watch is clean
 				return false
 			}
+		}
+		} catch (e) {
+			console.error(e)
+		}
 		})
 		return dirty
-	}
+}
 
 	$eval(expression, locals) {
 		return expression(this, locals)
