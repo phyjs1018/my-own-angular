@@ -1,0 +1,7 @@
+- The two-side process underlying Angular's dirty-checking: $watch and $digest
+- The dirty-checking loop and the TTL mechanism for short-circuiting it
+- The difference between reference-based and value-based comparison
+- Executing function on the digest loop in different ways: Immediately with $eval and $apply and time-shifted with $evalAsync, $applyAsync, and $$postDigest
+- Exception handing in the Angular digest
+- Destroying watches so they won't get executed again
+- Watching several things with a single effect using the $watchGroup function
