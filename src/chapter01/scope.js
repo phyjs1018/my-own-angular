@@ -229,7 +229,8 @@ class Scope {
 	$new() {
 		let ChildScope = function() {}
 		ChildScope.prototype = this
-		var child = new ChildScope()
+		let child = new ChildScope()
+		child.$$watchers = []
 		return child
 	}
 }
