@@ -23,14 +23,61 @@ class Scope {
 		}
 		this.$$watchers.unshift(watcher)
 		//does not end the digest so that the new watches are not run
-		this.lastDirtyWatch = null
+		this.$$lastDirtyWatch = null
 
 		return function() {
-			var index = self.$$watchers.indexOf(watcher)
+			let index = self.$$watchers.indexOf(watcher)
 			if(index >= 0) {
 				self.$$watchers.splice(index, 1)
 				self.$$lastDirtyWatch = null
 			}
+		}
+	}
+
+	$watchGroup(watchFns, listenerFn) {
+		let self = this
+		let newValues = new Array(watchFns.length)
+		let oldValues = new Array(watchFns.length)
+		let changeReactionScheduled = false
+		let firstRun = true
+
+		if(watchFns.length === 0) {
+			let shouldCall = true
+			self.$evalAsync(() => {
+				if(shouldCall) {
+					listenerFn(newValues, oldValues, self)
+				}
+			})
+			return function() {
+				shouldCall = false
+			}
+		}
+
+		function watchGroupListener() {
+			if (firstRun) {
+				firstRun = false
+				listenerFn(newValues, newValues, self)
+			} else {
+				listenerFn(newValues, oldValues, self)
+			}
+			changeReactionScheduled = false
+		}
+
+		let destroyFunctions = _.map(watchFns, (watchFn, i) => {
+			return self.$watch(watchFn, (newValue, oldValue) => {
+				newValues[i] = newValue
+				oldValues[i] = oldValue
+				if(!changeReactionScheduled) {
+					changeReactionScheduled = true
+					self.$evalAsync(watchGroupListener)
+				}
+			})
+		})
+
+		return function() {
+			_.forEach(destroyFunctions, (destroyFunctions) => {
+				destroyFunctions()
+			})
 		}
 	}
 
@@ -50,7 +97,7 @@ class Scope {
 	$digest() {
 		let ttl = 10
 		let dirty
-		this.lastDirtyWatch = null
+		this.$$lastDirtyWatch = null
 		this.$beginPhase('$digest')
 
 		if(this.$$applyAsyncId) {
@@ -94,15 +141,17 @@ class Scope {
 			if(watcher) {
 			newValue = watcher.watchFn(self)
 			oldValue = watcher.last
+			// console.log(newValue)
+			// console.log(oldValue)
 			if(!self.$$areEqual(newValue, oldValue, watcher.valueEq)) {
-				self.lastDirtyWatch = watcher
+				self.$$lastDirtyWatch = watcher
 				watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
 				watcher.listenerFn(newValue,
 					//we'd rather not leak that function outside of scope.js
 						(oldValue === initWatchVal ? newValue : oldValue),
 							self)
 				dirty = true
-			} else if (self.lastDirtyWatch === watcher) {
+			} else if (self.$$lastDirtyWatch === watcher) {
 				//short-circuiting the digest when the last watch is clean
 				return false
 			}
