@@ -224,4 +224,12 @@ class Scope {
 	$clearPhase() {
 		this.$$phase = null
 	}
+
+	//scope-inheritance
+	$new() {
+		let ChildScope = function() {}
+		ChildScope.prototype = this
+		var child = new ChildScope()
+		return child
+	}
 }
