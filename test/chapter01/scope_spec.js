@@ -486,17 +486,15 @@ describe('scope', function() {
       expect(watchCalls).toEqual(['first', 'second', 'third', 'first', 'third'])
     })
 
-    xit('allows a $watch to destroy another during digest', function() {
+    it('allows a $watch to destroy another during digest', function() {
       scope.aValue = 'abc'
       scope.counter = 0
 
       scope.$watch(
         function(scope) {
-          console.log('01')
           return scope.aValue
         },
         function(newValue, oldvalue, scope) {
-          console.log('destroyWatch')
           destroyWatch()
         }
       )
@@ -507,15 +505,80 @@ describe('scope', function() {
       )
 
       scope.$watch(
-        function(scope) { return scope.aValue },
+        function(scope) {
+          return scope.aValue
+        },
         function(newValue, oldValue, scope) {
-          console.log(03)
           scope.counter++
         }
       )
 
       scope.$digest()
       expect(scope.counter).toBe(1)
+    })
+
+    it('allows destroying serveral $watches during digest', function() {
+      scope.aValue = 'abc'
+      scope.counter = 0
+
+      var destroyWatch1 = scope.$watch(
+        function(scope) {
+          destroyWatch1()
+          destroyWatch2()
+        }
+      )
+      var destroyWatch2 = scope.$watch(
+        function(scope) { return scope.aValue },
+        function(newValue, oldValue, scope) {
+          scope.counter++
+        }
+      )
+
+      scope.$digest()
+      expect(scope.counter).toBe(0)
+    })
+
+    describe('$watchGroup', function() {
+      var scope
+      beforeEach(function() {
+        scope = new Scope()
+      })
+
+      it('takes watches as an array and calls listener with arrays', function() {
+        var gotNewValues, gotOldValue
+
+        scope.aValue = 1
+        scope.anotherValue = 2
+
+        scope.$watchGroup([
+          function(scope) { return scope.aValue },
+          function(scope) { return scope.anotherValue }
+        ], function(newValue, oldvalue, scope) {
+          gotNewValues = newValue
+          gotOldValue = oldvalue
+        })
+        scope.$digest()
+
+        expect(gotNewValues).toEqual([1, 2])
+        expect(gotOldValue).toEqual([1, 2])
+      })
+
+      it('only calls listener once per digest', function() {
+        var counter = 0
+
+        scope.aValue = 1
+        scope.anotherValue = 2
+
+        scope.$watchGroup([
+          function(scope) { return scope.aValue },
+          function(scope) { return scope.anotherValue }
+        ], function(newValues, oldValues, scope) {
+          counter++
+        })
+        scope.$digest()
+
+        expect(counter).toBe(1)
+      })
     })
   })
 })
