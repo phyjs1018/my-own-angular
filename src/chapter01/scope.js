@@ -9,6 +9,7 @@ class Scope {
 		this.$$applyAsyncQueue = []
 		this.$$postDigestQueue = []
 		this.$$children = []
+		this.$root = this
 		this.$$lastDirtyWatch = null
 		this.$$applyAsyncId = null
 		this.$$phase = null
@@ -24,13 +25,13 @@ class Scope {
 		}
 		this.$$watchers.unshift(watcher)
 		//does not end the digest so that the new watches are not run
-		this.$$lastDirtyWatch = null
+		this.$root.$$lastDirtyWatch = null
 
 		return function() {
 			let index = self.$$watchers.indexOf(watcher)
 			if(index >= 0) {
 				self.$$watchers.splice(index, 1)
-				self.$$lastDirtyWatch = null
+				self.$root.$$lastDirtyWatch = null
 			}
 		}
 	}
@@ -98,7 +99,7 @@ class Scope {
 	$digest() {
 		let ttl = 10
 		let dirty
-		this.$$lastDirtyWatch = null
+		this.$root.$$lastDirtyWatch = null
 		this.$beginPhase('$digest')
 
 		if(this.$$applyAsyncId) {
@@ -148,14 +149,14 @@ class Scope {
 				// console.log(newValue)
 				// console.log(oldValue)
 				if(!scope.$$areEqual(newValue, oldValue, watcher.valueEq)) {
-					scope.$$lastDirtyWatch = watcher
+					scope.$root.$$lastDirtyWatch = watcher
 					watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
 					watcher.listenerFn(newValue,
 						//we'd rather not leak that function outside of scope.js
 							(oldValue === initWatchVal ? newValue : oldValue),
 								scope)
 					dirty = true
-				} else if (scope.$$lastDirtyWatch === watcher) {
+				} else if (scope.$root.$$lastDirtyWatch === watcher) {
 					//recursive digestion
 					continueLoop = false
 					//short-circuiting the digest when the last watch is clean
@@ -181,7 +182,7 @@ class Scope {
 			return this.$eval(expression)
 		} finally {
 			this.$clearPhase()
-			this.$digest()
+			this.$root.$digest()
 		}
 	}
 
@@ -195,7 +196,7 @@ class Scope {
 		if(!self.$$phase && !self.$$asyncQueue.length) {
 			setTimeout(function() {
 				if(self.$$asyncQueue.length) {
-					self.$digest()
+					self.$root.$digest()
 				}
 			}, 0)
 		}
