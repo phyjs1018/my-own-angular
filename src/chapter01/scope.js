@@ -102,7 +102,7 @@ class Scope {
 		this.$root.$$lastDirtyWatch = null
 		this.$beginPhase('$digest')
 
-		if(this.$$applyAsyncId) {
+		if(this.$root.$$applyAsyncId) {
 			clearTimeout(this.$$applyAsyncId)
 			this.$$flushApplyAsync()
 		}
@@ -209,8 +209,8 @@ class Scope {
 			self.$eval(expr)
 		})
 
-		if(self.$$applyAsyncId === null) {
-			self.$$applyAsyncId = setTimeout(function() {
+		if(self.$root.$$applyAsyncId === null) {
+			self.$root.$$applyAsyncId = setTimeout(function() {
 				self.$apply(_.bind(self.$$flushApplyAsync, self))
 			}, 0)
 		}
@@ -235,10 +235,19 @@ class Scope {
 	}
 
 	//scope-inheritance
-	$new() {
-		let ChildScope = function() {}
-		ChildScope.prototype = this
-		let child = new ChildScope()
+	$new(isolated) {
+		let child
+		if (isolated) {
+			child = new Scope()
+			child.$root = this.$root
+			child.$$asyncQueue = this.$$asyncQueue
+			child.$$postDigestQueue = this.$$postDigestQueue
+			child.$$applyAsyncQueue = this.$$applyAsyncQueue
+		} else {
+			let ChildScope = function() { }
+			ChildScope.prototype = this
+			child = new ChildScope()
+		}
 		this.$$children.push(child)
 		child.$$watchers = []
 		child.$$children = []
