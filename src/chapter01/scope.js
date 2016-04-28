@@ -8,6 +8,7 @@ class Scope {
 		this.$$asyncQueue = []
 		this.$$applyAsyncQueue = []
 		this.$$postDigestQueue = []
+		this.$$children = []
 		this.$$lastDirtyWatch = null
 		this.$$applyAsyncId = null
 		this.$$phase = null
@@ -135,33 +136,40 @@ class Scope {
 
 	$digestOnce() {
 		let self = this
-		let newValue, oldValue, dirty
-		_.forEachRight(self.$$watchers, (watcher) => {
-		 try{
-			if(watcher) {
-			newValue = watcher.watchFn(self)
-			oldValue = watcher.last
-			// console.log(newValue)
-			// console.log(oldValue)
-			if(!self.$$areEqual(newValue, oldValue, watcher.valueEq)) {
-				self.$$lastDirtyWatch = watcher
-				watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
-				watcher.listenerFn(newValue,
-					//we'd rather not leak that function outside of scope.js
-						(oldValue === initWatchVal ? newValue : oldValue),
-							self)
-				dirty = true
-			} else if (self.$$lastDirtyWatch === watcher) {
-				//short-circuiting the digest when the last watch is clean
-				return false
-			}
-		}
-		} catch (e) {
-			console.error(e)
-		}
+		let dirty
+		let continueLoop = true
+		this.$$everyScope(function(scope) {
+			let newValue, oldValue
+			_.forEachRight(scope.$$watchers, (watcher) => {
+			 try{
+				if(watcher) {
+				newValue = watcher.watchFn(scope)
+				oldValue = watcher.last
+				// console.log(newValue)
+				// console.log(oldValue)
+				if(!scope.$$areEqual(newValue, oldValue, watcher.valueEq)) {
+					scope.$$lastDirtyWatch = watcher
+					watcher.last = (watcher.valueEq ? _.cloneDeep(newValue) : newValue)
+					watcher.listenerFn(newValue,
+						//we'd rather not leak that function outside of scope.js
+							(oldValue === initWatchVal ? newValue : oldValue),
+								scope)
+					dirty = true
+				} else if (scope.$$lastDirtyWatch === watcher) {
+					//recursive digestion
+					continueLoop = false
+					//short-circuiting the digest when the last watch is clean
+					return false
+					}
+				}
+			} catch (e) {
+				console.error(e)
+				}
+			})
+			return continueLoop
 		})
 		return dirty
-}
+	}
 
 	$eval(expression, locals) {
 		return expression(this, locals)
@@ -230,7 +238,19 @@ class Scope {
 		let ChildScope = function() {}
 		ChildScope.prototype = this
 		let child = new ChildScope()
+		this.$$children.push(child)
 		child.$$watchers = []
+		child.$$children = []
 		return child
+	}
+
+	$$everyScope(fn) {
+		if (fn(this)) {
+			return this.$$children.every(function(child) {
+				return child.$$everyScope(fn)
+			})
+		} else {
+			return false
+		}
 	}
 }
