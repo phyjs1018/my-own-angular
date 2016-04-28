@@ -689,5 +689,22 @@ describe('scope', function() {
       expect(child.user.name).toBe('Jill')
       expect(parent.user.name).toBe('Jill')
     })
+
+    //separated watches
+    it('does not digest its parent(s)', function() {
+      var parent = new Scope()
+      var child = parent.$new()
+
+      parent.aValue = 'abc'
+      parent.$watch(
+        function(scope) { return scope.aValue },
+        function(newValue, oldValue, scope) {
+          scope.aValueWas = newValue
+        }
+      )
+
+      child.$digest()
+      expect(child.aValueWas).toBeUndefined()
+    })
   })
 })
