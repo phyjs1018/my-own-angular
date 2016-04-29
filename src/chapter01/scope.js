@@ -300,6 +300,13 @@ class Scope {
 						changeCount++
 						oldValue.length = newValue.length
 					}
+					_.forEach(newValue, function(newItem, i) {
+						let bothNaN = _.isNaN(newItem) && _.isNaN(oldValue[i])
+						if(newItem !== oldValue[i] && !bothNaN) {
+							changeCount++
+							oldValue[i] = newItem
+						}
+					})
 				} else {
 
 				}
