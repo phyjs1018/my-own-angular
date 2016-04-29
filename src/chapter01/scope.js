@@ -289,10 +289,26 @@ class Scope {
 
 		let internalWatchFn = (scope) => {
 			newValue = watchFn(scope)
-			if (!self.$$areEqual(newValue, oldValue, false)) {
-				changeCount++
+
+			if (_.isObject(newValue)) {
+				if (_.isArray(newValue)) {
+					if (!_.isArray(oldValue)) {
+						changeCount++
+						oldValue = []
+					}
+					if (newValue.length !== oldValue.length) {
+						changeCount++
+						oldValue.length = newValue.length
+					}
+				} else {
+
+				}
+			} else {
+				if(!self.$$areEqual(newValue, oldValue, false)) {
+					changeCount++
+				}
+				oldValue = newValue
 			}
-			oldValue = newValue
 
 			return changeCount
 		}
