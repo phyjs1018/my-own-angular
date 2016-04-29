@@ -235,20 +235,21 @@ class Scope {
 	}
 
 	//scope-inheritance
-	$new(isolated) {
+	$new(isolated, parent) {
 		let child
+		parent = parent || this
 		if (isolated) {
 			child = new Scope()
-			child.$root = this.$root
-			child.$$asyncQueue = this.$$asyncQueue
-			child.$$postDigestQueue = this.$$postDigestQueue
-			child.$$applyAsyncQueue = this.$$applyAsyncQueue
+			child.$root = parent.$root
+			child.$$asyncQueue = parent.$$asyncQueue
+			child.$$postDigestQueue = parent.$$postDigestQueue
+			child.$$applyAsyncQueue = parent.$$applyAsyncQueue
 		} else {
 			let ChildScope = function() { }
 			ChildScope.prototype = this
 			child = new ChildScope()
 		}
-		this.$$children.push(child)
+		parent.$$children.push(child)
 		child.$$watchers = []
 		child.$$children = []
 		return child
