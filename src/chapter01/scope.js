@@ -279,4 +279,28 @@ class Scope {
 			siblings.splice(indexOfThis, 1)
 		}
 	}
+
+	//watching collection
+	$watchCollection(watchFn, listenerFn) {
+		let self = this
+		let newValue
+		let oldValue
+		let changeCount = 0
+
+		let internalWatchFn = (scope) => {
+			newValue = watchFn(scope)
+			if (!self.$$areEqual(newValue, oldValue, false)) {
+				changeCount++
+			}
+			oldValue = newValue
+
+			return changeCount
+		}
+
+		let internalListenerFn = () => {
+			listenerFn(newValue, oldValue, self)
+		}
+
+		return this.$watch(internalWatchFn, internalListenerFn)
+	}
 }
