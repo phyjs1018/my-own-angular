@@ -1,3 +1,4 @@
+scope: Angular's dirty-checking
 - The two-side process underlying Angular's dirty-checking: $watch and $digest
 - The dirty-checking loop and the TTL mechanism for short-circuiting it
 - The difference between reference-based and value-based comparison
@@ -5,3 +6,13 @@
 - Exception handing in the Angular digest
 - Destroying watches so they won't get executed again
 - Watching several things with a single effect using the $watchGroup function
+
+
+scope: inheritance
+- How child scopes are created
+- The relationship between scope inheritance and javascript's native prototypal inheritance
+- Attribute shadowing and its implications
+- Recursive digest from a parent scope to its child scopes
+- The difference between $digest and $apply when it comes to the starting point of digestion
+- Isolated scopes and how they differ from normal child scopes
+- How child scopes are destroyed

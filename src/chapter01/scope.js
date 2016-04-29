@@ -235,6 +235,7 @@ class Scope {
 	}
 
 	//scope-inheritance
+	//substituting the parent scope
 	$new(isolated, parent) {
 		let child
 		parent = parent || this
@@ -252,6 +253,7 @@ class Scope {
 		parent.$$children.push(child)
 		child.$$watchers = []
 		child.$$children = []
+		child.$parent = parent
 		return child
 	}
 
@@ -262,6 +264,19 @@ class Scope {
 			})
 		} else {
 			return false
+		}
+	}
+
+	//destroy a scope
+	$destroy() {
+		if(this === this.$root) {
+			return;
+		}
+
+		var siblings = this.$parent.$$children
+		var indexOfThis = siblings.indexOf(this)
+		if(indexOfThis >= 0) {
+			siblings.splice(indexOfThis, 1)
 		}
 	}
 }
