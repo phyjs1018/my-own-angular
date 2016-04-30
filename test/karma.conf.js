@@ -11,7 +11,7 @@ module.exports = function(config) {
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['jasmine'],
-    
+
     plugins: [
       'karma-jasmine',
       'karma-phantomjs-launcher'
@@ -19,12 +19,12 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      './dist/**/*.js',
-      './test/**/*.js',
       './node_modules/lodash/lodash.js',
-      './node_modules/jquery/dist/jquery.js'
+      './node_modules/jquery/dist/jquery.js',
+      './dist/**/*.js',
+      './test/**/*.js'
     ],
-    
+
     // coverage reporter generates the coverage
     reporters: ['progress', 'coverage'],
 
