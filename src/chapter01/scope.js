@@ -380,4 +380,18 @@ class Scope {
 		}
 		listeners.push(listener)
 	}
+
+	$emit(eventName) {
+		let listeners = this.$$listeners[eventName] || []
+		_.forEach(listeners, (listener) => {
+			listener()
+		})
+	}
+
+	$broadcast(eventName) {
+		let listeners = this.$$listeners[eventName] || []
+		_.forEach(listeners, (listener) => {
+			listener()
+		})
+	}
 }
