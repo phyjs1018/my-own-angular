@@ -286,6 +286,8 @@ class Scope {
 		let newValue
 		let oldValue
 		let oldLength
+		let veryOldValue
+		let trackVeryOldValue = (listenerFn.length > 1)
 		let changeCount = 0
 
 		let internalWatchFn = (scope) => {
@@ -352,7 +354,11 @@ class Scope {
 		}
 
 		let internalListenerFn = () => {
-			listenerFn(newValue, oldValue, self)
+			listenerFn(newValue, veryOldValue, self)
+
+			if(trackVeryOldValue) {
+				veryOldValue = _.clone(newValue)
+			}
 		}
 
 		return this.$watch(internalWatchFn, internalListenerFn)
