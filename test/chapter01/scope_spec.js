@@ -1279,7 +1279,26 @@ describe('scope', function() {
       expect(scope.counter).toBe(2)
     })
 
-    //preventing unnecessary object iteration
-    
+    //dealing with objects than have a length
+    it('does not conside any object with a length property an array', function() {
+      //when the length is 0, it can not work well
+      //scope.obj = {length: 0, otherKey: 'abc}
+      scope.obj = {length: 42, otherKey: 'abc'}
+      scope.counter = 0
+      
+      scope.$watchCollection(
+        function(scope) { return scope.obj },
+        function(newValue, oldValue, scope) {
+          scope.counter++
+        }
+      )
+      
+      scope.$digest()
+      
+      scope.obj.newKey = 'def'
+      scope.$digest()
+      
+      expect(scope.counter).toBe(2)
+    })    
   })
 })

@@ -315,6 +315,7 @@ class Scope {
 						oldValue = {}
 						oldLength = 0
 					}
+					//preventing unnecessary object iteration
 					newLength = 0
 					_.forOwn(newValue, (newVal, key) => {
 						newLength++
