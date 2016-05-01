@@ -388,18 +388,29 @@ class Scope {
 	}
 
 	$emit(eventName, ...additionalArgs) {
-		return this.$$fireEventOnScope(eventName, additionalArgs)
+		let event = {name: eventName}
+		let listenerArgs = [event].concat(additionalArgs)
+		let scope = this
+		do {
+			scope.$$fireEventOnScope(eventName, listenerArgs)
+			scope = scope.$parent
+		} while (scope)
+		return event
 	}
 
 	$broadcast(eventName, ...additionalArgs) {
-		return this.$$fireEventOnScope(eventName, additionalArgs)
+		let event = {name: eventName}
+		let listenerArgs = [event].concat(additionalArgs)
+	  this.$$everyScope(function(scope) {
+			scope.$$fireEventOnScope(eventName, listenerArgs)
+			return true
+		})
+		return event
 	}
 
 	//dealing with duplication
 	//return the event object
-	$$fireEventOnScope(eventName, additionalArgs) {
-		let event = {name: eventName}
-		let listenerArgs = [event].concat(additionalArgs)
+	$$fireEventOnScope(eventName, listenerArgs) {
 		let listeners = this.$$listeners[eventName] || []
 		let i = 0
 
