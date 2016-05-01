@@ -379,19 +379,38 @@ class Scope {
 			this.$$listeners[eventName] = listeners = []
 		}
 		listeners.push(listener)
+		return function() {
+			let index = listeners.indexOf(listener)
+			if (index >= 0) {
+				listeners[index] = null
+			}
+		}
 	}
 
-	$emit(eventName) {
-		let listeners = this.$$listeners[eventName] || []
-		_.forEach(listeners, (listener) => {
-			listener()
-		})
+	$emit(eventName, ...additionalArgs) {
+		return this.$$fireEventOnScope(eventName, additionalArgs)
 	}
 
-	$broadcast(eventName) {
+	$broadcast(eventName, ...additionalArgs) {
+		return this.$$fireEventOnScope(eventName, additionalArgs)
+	}
+
+	//dealing with duplication
+	//return the event object
+	$$fireEventOnScope(eventName, additionalArgs) {
+		let event = {name: eventName}
+		let listenerArgs = [event].concat(additionalArgs)
 		let listeners = this.$$listeners[eventName] || []
-		_.forEach(listeners, (listener) => {
-			listener()
-		})
+		let i = 0
+
+		while (i < listeners.length) {
+			if (listeners[i] === null) {
+				listeners.splice(i, 1)
+			} else {
+				listeners[i].apply(null, listenerArgs)
+				i++
+			}
+		}
+		return event
 	}
 }
