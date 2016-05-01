@@ -300,7 +300,7 @@ class Scope {
 						changeCount++
 						oldValue.length = newValue.length
 					}
-					_.forEach(newValue, function(newItem, i) {
+					_.forEach(newValue, (newItem, i) => {
 						let bothNaN = _.isNaN(newItem) && _.isNaN(oldValue[i])
 						if(newItem !== oldValue[i] && !bothNaN) {
 							changeCount++
@@ -312,6 +312,20 @@ class Scope {
 						changeCount++
 						oldValue = {}
 					}
+					_.forOwn(newValue, (newVal, key) => {
+						let bothNaN = _.isNaN(newVal) && _.isNaN(oldValue[key])
+
+						if(!bothNaN && oldValue[key] !== newVal) {
+							changeCount++
+							oldValue[key] = newVal
+						}
+					})
+					_.forOwn(oldValue, (newVal, key) => {
+						if(!newValue.hasOwnProperty(key)) {
+							changeCount++
+							delete oldValue[key]
+						}
+					})
 				}
 			} else {
 				if(!self.$$areEqual(newValue, oldValue, false)) {
