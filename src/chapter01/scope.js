@@ -285,9 +285,11 @@ class Scope {
 		let self = this
 		let newValue
 		let oldValue
+		let oldLength
 		let changeCount = 0
 
 		let internalWatchFn = (scope) => {
+			let newLength, key
 			newValue = watchFn(scope)
 
 			if (_.isObject(newValue)) {
@@ -311,21 +313,32 @@ class Scope {
 					if (!_.isObject(oldValue) || _.isArrayLike(oldValue)) {
 						changeCount++
 						oldValue = {}
+						oldLength = 0
 					}
+					newLength = 0
 					_.forOwn(newValue, (newVal, key) => {
-						let bothNaN = _.isNaN(newVal) && _.isNaN(oldValue[key])
-
-						if(!bothNaN && oldValue[key] !== newVal) {
+						newLength++
+						if (oldValue.hasOwnProperty(key)) {
+							let bothNaN = _.isNaN(oldValue[key]) && _.isNaN(newVal)
+							if(!bothNaN && oldValue[key] !== newVal) {
+								changeCount++
+								oldValue[key] = newVal
+							}
+						} else {
 							changeCount++
+							oldLength++
 							oldValue[key] = newVal
 						}
 					})
-					_.forOwn(oldValue, (newVal, key) => {
-						if(!newValue.hasOwnProperty(key)) {
-							changeCount++
-							delete oldValue[key]
-						}
-					})
+					if(oldLength > newLength) {
+						changeCount++
+						_.forOwn(oldValue, (oldVal, key) => {
+							if (!newValue.hasOwnProperty(key)) {
+								oldLength--
+								delete oldValue[key]
+							}
+						})
+					}
 				}
 			} else {
 				if(!self.$$areEqual(newValue, oldValue, false)) {

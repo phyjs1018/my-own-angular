@@ -1279,6 +1279,7 @@ describe('scope', function() {
       expect(scope.counter).toBe(2)
     })
 
+    //preventing unnecessary object iteration
     
   })
 })
