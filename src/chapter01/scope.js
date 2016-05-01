@@ -388,13 +388,20 @@ class Scope {
 	}
 
 	$emit(eventName, ...additionalArgs) {
-		let event = {name: eventName, targetScope: this}
+		var propagationStopped = false
+		let event = {
+			name: eventName,
+			targetScope: this,
+			stopPropagation: function() {
+				propagationStopped = true
+			}
+		}
 		let listenerArgs = [event].concat(additionalArgs)
 		let scope = this
 		do {
 			scope.$$fireEventOnScope(eventName, listenerArgs)
 			scope = scope.$parent
-		} while (scope)
+		} while (scope && !propagationStopped)
 		return event
 	}
 
