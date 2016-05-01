@@ -1358,5 +1358,22 @@ describe('scope', function() {
 
       expect(oldValueGiven).toEqual({a: 1, b:2})
     })
+
+    //discussed the role of oldValue on the first invocation
+    it('uses the new value as the old value on first digest', function() {
+      scope.aValue = {a: 1, b: 2}
+      var oldValueGiven
+
+      scope.$watchCollection(
+        function(scope) { return scope.aValue },
+        function(newValue, oldValue, scope) {
+          oldValueGiven = oldValue
+        }
+      )
+
+      scope.$digest()
+
+      expect(oldValueGiven).toEqual({a: 1, b:2})
+    })
   })
 })
