@@ -16,3 +16,9 @@ scope: inheritance
 - The difference between $digest and $apply when it comes to the starting point of digestion
 - Isolated scopes and how they differ from normal child scopes
 - How child scopes are destroyed
+
+Watching collections
+- How $watchCollection can be used with arrays, objects, and other values
+- What $watchCollection does with arrays
+- What $watchCollection does with arrays
+- Array-like objects and their role in $watchCollection
