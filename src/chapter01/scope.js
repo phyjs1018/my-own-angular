@@ -13,6 +13,7 @@ class Scope {
 		this.$$lastDirtyWatch = null
 		this.$$applyAsyncId = null
 		this.$$phase = null
+		this.$$listeners = {}
 	}
 
 	$watch(watchFn, listenerFn, valueEq) {
@@ -253,6 +254,7 @@ class Scope {
 		parent.$$children.push(child)
 		child.$$watchers = []
 		child.$$children = []
+		child.$$listeners = {}
 		child.$parent = parent
 		return child
 	}
@@ -368,5 +370,14 @@ class Scope {
 		}
 
 		return this.$watch(internalWatchFn, internalListenerFn)
+	}
+
+	//scope Events
+	$on(eventName, listener) {
+		let listeners = this.$$listeners[eventName]
+		if (!listeners) {
+			this.$$listeners[eventName] = listeners = []
+		}
+		listeners.push(listener)
 	}
 }
