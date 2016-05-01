@@ -388,7 +388,7 @@ class Scope {
 	}
 
 	$emit(eventName, ...additionalArgs) {
-		let event = {name: eventName}
+		let event = {name: eventName, targetScope: this}
 		let listenerArgs = [event].concat(additionalArgs)
 		let scope = this
 		do {
@@ -399,7 +399,7 @@ class Scope {
 	}
 
 	$broadcast(eventName, ...additionalArgs) {
-		let event = {name: eventName}
+		let event = {name: eventName, targetScope: this}
 		let listenerArgs = [event].concat(additionalArgs)
 	  this.$$everyScope(function(scope) {
 			scope.$$fireEventOnScope(eventName, listenerArgs)
