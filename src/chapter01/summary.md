@@ -1,4 +1,4 @@
-scope: Angular's dirty-checking
+Scope - Angular's dirty-checking
 - The two-side process underlying Angular's dirty-checking: $watch and $digest
 - The dirty-checking loop and the TTL mechanism for short-circuiting it
 - The difference between reference-based and value-based comparison
@@ -8,7 +8,7 @@ scope: Angular's dirty-checking
 - Watching several things with a single effect using the $watchGroup function
 
 
-scope: inheritance
+Scope inheritance
 - How child scopes are created
 - The relationship between scope inheritance and javascript's native prototypal inheritance
 - Attribute shadowing and its implications
@@ -22,3 +22,12 @@ Watching collections
 - What $watchCollection does with arrays
 - What $watchCollection does with arrays
 - Array-like objects and their role in $watchCollection
+
+Scope Events
+- How Angular's event system builds on the classic pub/sub pattern
+- How event listeners are registered on scopes
+- How events are fired on scopes
+- What the differences between $emit and $broadcast are
+- What the contents of scope event objects are
+- How some of the scope attributes are modeled after the DOM event model
+- When and how scope events can be stopped
