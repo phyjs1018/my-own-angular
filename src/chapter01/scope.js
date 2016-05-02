@@ -239,7 +239,7 @@ class Scope {
 	//substituting the parent scope
 	$new(isolated, parent) {
 		let child
-		parent = parent || this
+	  parent = parent || this
 		if (isolated) {
 			child = new Scope()
 			child.$root = parent.$root
@@ -392,26 +392,39 @@ class Scope {
 		let event = {
 			name: eventName,
 			targetScope: this,
-			stopPropagation: function() {
+			stopPropagation() {
 				propagationStopped = true
+			},
+			preventDefault() {
+				event.defaultPrevented = true
 			}
 		}
 		let listenerArgs = [event].concat(additionalArgs)
 		let scope = this
 		do {
+			event.currentScope = scope
 			scope.$$fireEventOnScope(eventName, listenerArgs)
 			scope = scope.$parent
 		} while (scope && !propagationStopped)
+		event.currentScope = null
 		return event
 	}
 
 	$broadcast(eventName, ...additionalArgs) {
-		let event = {name: eventName, targetScope: this}
+		let event = {
+			name: eventName,
+			targetScope: this,
+			preventDefault() {
+				event.defaultPrevented = true
+			}
+		}
 		let listenerArgs = [event].concat(additionalArgs)
 	  this.$$everyScope(function(scope) {
+			event.currentScope = scope
 			scope.$$fireEventOnScope(eventName, listenerArgs)
 			return true
 		})
+		event.currentScope = null
 		return event
 	}
 
@@ -430,5 +443,19 @@ class Scope {
 			}
 		}
 		return event
+	}
+
+	//broadcasting scope removal
+	$destroy() {
+		if (this === this.$root) {
+			return;
+		}
+		console.log(1)
+		let siblings = this.$parent.$$children
+		let indexOfThis = siblings.indexOf(this)
+		if (indexOfThis >= 0) {
+			this.$broadcast('$destroy')
+			siblings.splice(indexOfThis, 1)
+		}
 	}
 }

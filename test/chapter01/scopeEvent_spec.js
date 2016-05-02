@@ -131,6 +131,18 @@ describe('Events', function() {
 
       expect(nextListener).toHaveBeenCalled()
     })
+
+    //preventing default event behavior
+    it('is sets defaultPrevented when preventDefault called on' + method, function() {
+      var listener = function(event) {
+        event.preventDefault()
+      }
+      scope.$on('someEvent', listener)
+
+      var event = scope[method]('someEvent')
+
+      expect(event.defaultPrevented).toBe(true)
+    })
   })
 
   //emitting up the scope hierarchy
@@ -234,5 +246,15 @@ describe('Events', function() {
     scope.$emit('someEvent')
 
     expect(listener2).toHaveBeenCalled()
+  })
+
+  //broadcasting scope removal
+  it('fires $destroy when destroyed', function() {
+    var listener = jasmine.createSpy()
+    scope.$on('$destroy', listener)
+
+    scope.$destroy()
+
+    expect(listener).toHaveBeenCalled()
   })
 })

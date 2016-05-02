@@ -14,7 +14,8 @@ module.exports = function(config) {
 
     plugins: [
       'karma-jasmine',
-      'karma-phantomjs-launcher'
+      'karma-phantomjs-launcher',
+      'karma-coverage'
     ],
 
     // list of files / patterns to load in the browser
