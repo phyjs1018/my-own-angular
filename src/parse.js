@@ -8,7 +8,17 @@ class Parser {
   parse(text) {
     this.tokens = this.lexer.lex(text)
     //_.first get the first item in the array
-    return _.first(this.tokens).fn
+    return this.primary()
+  }
+
+  primary() {
+    let token = this.tokens[0]
+    let primary = token.fn
+    if (token.constant) {
+      primary.constant = true
+      primary.literal = true
+    }
+    return primary
   }
 }
 
@@ -53,7 +63,9 @@ class Lexer {
     number = 1 * number
     this.tokens.push({
       text: number,
-      fn: _.constant(number) //the number to return when the functon invoked
+      //the number to return when the functon invoked
+      fn: _.constant(number),
+      constant: true
     })
   }
 }
