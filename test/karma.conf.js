@@ -15,7 +15,8 @@ module.exports = function(config) {
     plugins: [
       'karma-jasmine',
       'karma-phantomjs-launcher',
-      'karma-coverage'
+      'karma-coverage',
+      'karma-spec-reporter'
     ],
 
     // list of files / patterns to load in the browser
@@ -27,7 +28,15 @@ module.exports = function(config) {
     ],
 
     // coverage reporter generates the coverage
-    reporters: ['progress', 'coverage'],
+    reporters: ['progress', 'coverage', 'spec'],
+     specReporter: {
+        maxLogLines: 5,         // limit number of lines logged per test
+        suppressErrorSummary: true,  // do not print error summary
+        suppressFailed: false,  // do not print information about failed tests
+        suppressPassed: false,  // do not print information about passed tests
+        suppressSkipped: true,  // do not print information about skipped tests
+        showSpecTiming: false // print the time elapsed for each spec
+      },
 
     preprocessors: {
       // source files, that you wanna generate coverage for
