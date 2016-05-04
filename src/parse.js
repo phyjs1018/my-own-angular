@@ -1,5 +1,6 @@
 'use strict'
 
+//defined a parser class
 class Parser {
   constructor(lexer) {
     this.lexer = lexer
@@ -22,9 +23,17 @@ class Parser {
   }
 }
 
+
+//defined a lexer class
 class Lexer {
   constructor() {
 
+  }
+
+  peek() {
+    return this.index < this.text.length - 1 ? 
+      this.text.charAt(this.index + 1) :
+      false
   }
 
   lex(text) {
@@ -35,7 +44,7 @@ class Lexer {
 
     while (this.index < this.text.length) {
       this.ch = this.text.charAt(this.index)
-      if (this.isNumber(this.ch)) {
+      if (this.isNumber(this.ch) || (this.ch === '.' && this.isNumber(this.peek()))) {
         this.readNumber()
       } else {
         throw 'Unexpected next character: ' + this.ch
@@ -53,7 +62,7 @@ class Lexer {
     let number = ''
     while (this.index < this.text.length) {
       let ch = this.text.charAt(this.index)
-      if (this.isNumber(ch)) {
+      if (ch === '.' || this.isNumber(ch)) {
         number += ch
       } else {
         break
