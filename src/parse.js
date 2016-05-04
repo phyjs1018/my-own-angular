@@ -58,14 +58,28 @@ class Lexer {
     return '0' <= ch && ch <= '9'
   }
 
+  isExpOperator(ch) {
+    return ch === '-' || ch === '+' || this.isNumber(ch)
+  }
+
   readNumber() {
     let number = ''
     while (this.index < this.text.length) {
-      let ch = this.text.charAt(this.index)
+      let ch = this.text.charAt(this.index).toLowerCase()
       if (ch === '.' || this.isNumber(ch)) {
         number += ch
       } else {
-        break
+        let nextCh = this.peek()
+        let prevCh = number.charAt(number.length - 1)
+        if (ch === 'e' && this.isExpOperator(nextCh)) {
+          number += ch
+        } else if (this.isExpOperator(ch) && prevCh === 'e' && nextCh && this.isNumber(nextCh)) {
+          number += ch
+        } else if (this.isExpOperator(ch) && prevCh === 'e' && (!nextCh || !this.isNumber(nextCh))) {
+          throw 'invalid exponent'
+        } else {
+          break
+        }
       }
       this.index++
     }
