@@ -46,6 +46,8 @@ class Lexer {
       this.ch = this.text.charAt(this.index)
       if (this.isNumber(this.ch) || (this.ch === '.' && this.isNumber(this.peek()))) {
         this.readNumber()
+      } else if (this.ch === '\'' || this.ch === '"') {
+        this.readString(this.ch)
       } else {
         throw 'Unexpected next character: ' + this.ch
       }
@@ -90,6 +92,26 @@ class Lexer {
       fn: _.constant(number),
       constant: true
     })
+  }
+
+  readString(quote) {
+    this.index++
+    let string = ''
+    while (this.index < this.text.length) {
+      let ch = this.text.charAt(this.index)
+      if (ch === quote) {
+        this.index++
+        this.tokens.push({
+          constant: true,
+          fn: _.constant(string)
+        })
+        return;
+      } else {
+        string += ch
+      }
+      this.index++
+    }
+    throw 'Unmatched quote'
   }
 }
 

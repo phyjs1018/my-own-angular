@@ -49,4 +49,25 @@ describe('parse', function() {
     expect(function() { parse('42e-') }).toThrow()
     expect(function() { parse('42e-a') }).toThrow()
   })
+
+  //parsing strings 
+  it('can parse a string in single quotes', function() {
+    var fn = parse("'abc'")
+    expect(fn()).toEqual('abc')
+  })
+
+  it('can parse a string in double quotes', function() {
+    var fn = parse('"abc"')
+    expect(fn()).toEqual('abc')
+  })
+
+  it('will not parse a string with mismatching qutoes', function() {
+    expect(function() { parse('"abc\'') }).toThrow()
+  })
+
+  it('marks strings as literal and constant', function() {
+    var fn = parse('"abc"')
+    expect(fn.literal).toBe(true)
+    expect(fn.constant).toBe(true)
+  })
 })
