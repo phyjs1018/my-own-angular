@@ -96,16 +96,24 @@ class Lexer {
 
   readString(quote) {
     this.index++
+    let rawString = quote
     let string = ''
+    let escape = false
     while (this.index < this.text.length) {
       let ch = this.text.charAt(this.index)
-      if (ch === quote) {
+      rawString += ch
+      if (escape) {
+
+      } else if (ch === quote) {
         this.index++
         this.tokens.push({
+          text: rawString,
           constant: true,
           fn: _.constant(string)
         })
         return;
+      } else if (ch === '\\') {
+        escape = true
       } else {
         string += ch
       }

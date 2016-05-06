@@ -70,4 +70,9 @@ describe('parse', function() {
     expect(fn.literal).toBe(true)
     expect(fn.constant).toBe(true)
   })
+
+  it('will parse a string with character escapes', function() {
+    var fn = parse('"\\n\\r\\\\"')
+    expect(fn()).toEqual('\n\r\\')
+  })
 })
