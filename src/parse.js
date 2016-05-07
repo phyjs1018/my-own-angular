@@ -27,6 +27,16 @@ class Parser {
 //add escape character we support
 const ESCAPES = {'n': '\n', 'f': '\f', 'r': '\r', 't': '\t', 'v': '\v', '\'': '\'', '"': '"'}
 
+//add character for true, false and null
+const CONSTANTS = {
+  'null': _.constant(null),
+  'true': _.constant(true),
+  'false': _.constant(false)
+}
+_.forEach(CONSTANTS, (fn, constantName) => {
+  fn.constant = fn.literal = true
+})
+
 //defined a lexer class
 class Lexer {
   constructor() {
@@ -51,6 +61,8 @@ class Lexer {
         this.readNumber()
       } else if (this.ch === '\'' || this.ch === '"') {
         this.readString(this.ch)
+      } else if (this.isIden(this.ch)) {
+        this.readIdent()
       } else {
         throw 'Unexpected next character: ' + this.ch
       }
@@ -65,6 +77,10 @@ class Lexer {
 
   isExpOperator(ch) {
     return ch === '-' || ch === '+' || this.isNumber(ch)
+  }
+
+  isIden(ch) {
+    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_' || ch === '$'
   }
 
   readNumber() {
@@ -139,6 +155,26 @@ class Lexer {
       this.index++
     }
     throw 'Unmatched quote'
+  }
+
+  readIdent() {
+    let text = ''
+    while (this.index < this.text.length) {
+      let ch = this.text.charAt(this.index)
+      if (this.isIden(ch) || this.isNumber(ch)) {
+        text += ch
+      } else {
+        break
+      }
+      this.index++
+    }
+
+    let token = {
+      text: text,
+      fn: CONSTANTS[text]
+    }
+
+    this.tokens.push(token)
   }
 }
 
