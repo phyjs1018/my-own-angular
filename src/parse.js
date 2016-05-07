@@ -12,12 +12,61 @@ class Parser {
     return this.primary()
   }
 
+  expect(e) {
+    let token = this.peek(e)
+    if (token) {
+      return this.tokens.shift()
+    }
+  }
+
+  consume(e) {
+    if (!this.expect(e)) {
+      throw 'Unexpected Expecting' + e
+    }
+  }
+
+  peek(e) {
+    if (this.tokens.length > 0) {
+      let text = this.tokens[0].text
+      if (text === e || !e) {
+        return this.tokens[0]
+      }
+    }
+  }
+
+  arrayDeclaration() {
+    let elementFns = []
+    if (!this.peek(']')) {
+      do {
+        if (this.peek(']')) {
+          break;
+        }
+        elementFns.push(this.primary())
+      } while (this.expect(','));
+    }
+    this.consume(']')
+    let arrayFn = () => {
+      let elements = _.map(elementFns, (elementFn) => {
+        return elementFn()
+      })
+      return elements
+    }
+    arrayFn.literal = true
+    arrayFn.constant = true
+    return arrayFn
+  }
+
   primary() {
-    let token = this.tokens[0]
-    let primary = token.fn
-    if (token.constant) {
-      primary.constant = true
-      primary.literal = true
+    let primary
+    if (this.expect('[')) {
+      primary = this.arrayDeclaration()
+    } else {
+      let token = this.expect()
+      primary = token.fn
+      if (token.constant) {
+        primary.constant = true
+        primary.literal = true
+      }
     }
     return primary
   }
@@ -62,6 +111,11 @@ class Lexer {
         this.readNumber()
       } else if (this.ch === '\'' || this.ch === '"') {
         this.readString(this.ch)
+      } else if (this.ch === '[' || this.ch === ']' || this.ch === ',') {
+        this.tokens.push({
+          text: this.ch
+        })
+        this.index++
       } else if (this.isIden(this.ch)) {
         this.readIdent()
       } else if (this.isWhitespace(this.ch)) {
