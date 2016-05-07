@@ -49,6 +49,7 @@ class Lexer {
       false
   }
 
+//the method for lex expression
   lex(text) {
     this.text = text
     this.index = 0
@@ -63,6 +64,8 @@ class Lexer {
         this.readString(this.ch)
       } else if (this.isIden(this.ch)) {
         this.readIdent()
+      } else if (this.isWhitespace(this.ch)) {
+        this.index++
       } else {
         throw 'Unexpected next character: ' + this.ch
       }
@@ -71,6 +74,7 @@ class Lexer {
     return this.tokens
   }
 
+//some methods for judge current charactor
   isNumber(ch) {
     return '0' <= ch && ch <= '9'
   }
@@ -83,6 +87,11 @@ class Lexer {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch === '_' || ch === '$'
   }
 
+  isWhitespace(ch) {
+    return (ch === ' ' || ch === '\r' || ch === '\t'  || ch === '\n' || ch === '\v' || ch === '\u00A0')
+  }
+
+//some methods for traversal text
   readNumber() {
     let number = ''
     while (this.index < this.text.length) {

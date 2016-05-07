@@ -114,4 +114,10 @@ describe('parse', function() {
     expect(fn.literal).toBe(true)
     expect(fn.constant).toBe(true)
   })
+
+  //parsing whitespace
+  it('ignores whitespace', function() {
+    var fn = parse('\n42')
+    expect(fn()).toEqual(42)
+  })
 })
