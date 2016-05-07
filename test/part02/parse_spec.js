@@ -50,7 +50,7 @@ describe('parse', function() {
     expect(function() { parse('42e-a') }).toThrow()
   })
 
-  //parsing strings 
+  //parsing strings
   it('can parse a string in single quotes', function() {
     var fn = parse("'abc'")
     expect(fn()).toEqual('abc')
@@ -74,5 +74,15 @@ describe('parse', function() {
   it('will parse a string with character escapes', function() {
     var fn = parse('"\\n\\r\\\\"')
     expect(fn()).toEqual('\n\r\\')
+  })
+
+  //consider about unicode escapes
+  it('will parse a string with unicode escapes', function() {
+    var fn = parse('"\\u00A0"')
+    expect(fn()).toEqual('\u00A0')
+  })
+
+  it('will not parse a string with invalid unicode escapes', function() {
+    expect(function() { parse('"\\u00T0"'); }).toThrow
   })
 })

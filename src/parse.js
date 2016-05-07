@@ -24,6 +24,9 @@ class Parser {
 }
 
 
+//add escape character we support
+const ESCAPES = {'n': '\n', 'f': '\f', 'r': '\r', 't': '\t', 'v': '\v', '\'': '\'', '"': '"'}
+
 //defined a lexer class
 class Lexer {
   constructor() {
@@ -31,7 +34,7 @@ class Lexer {
   }
 
   peek() {
-    return this.index < this.text.length - 1 ? 
+    return this.index < this.text.length - 1 ?
       this.text.charAt(this.index + 1) :
       false
   }
@@ -103,7 +106,23 @@ class Lexer {
       let ch = this.text.charAt(this.index)
       rawString += ch
       if (escape) {
-
+        if (ch === 'u') {
+          let hex = this.text.substring(this.index + 1, this.index + 5)
+          if (!hex.match(/[\da-f]{4}/i)) {
+            throw 'Invalid unicode escape'
+          }
+          rawString += hex
+          this.index += 4
+          string += String.fromCharCode(parseInt(hex, 16))
+        } else {
+          let replacement = ESCAPES[ch]
+          if (replacement) {
+            string += replacement
+          } else {
+            string += ch
+          }
+        }
+        escape = false
       } else if (ch === quote) {
         this.index++
         this.tokens.push({
