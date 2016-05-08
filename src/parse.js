@@ -12,6 +12,8 @@ class Parser {
     return this.primary()
   }
 
+
+//some helper methods
   expect(e) {
     let token = this.peek(e)
     if (token) {
@@ -56,10 +58,37 @@ class Parser {
     return arrayFn
   }
 
+  object() {
+    let keyValues = []
+    if (!this.peek('}')) {
+      do {
+        let keyToken = this.expect()
+        this.consume(':')
+        let valueExpression = this.primary()
+        keyValues.push({key: keyToken.string || keyToken.text, value: valueExpression})
+      } while (this.expect(','));
+    }
+    this.consume('}')
+    let objectFn = () => {
+      let object = {}
+      _.forEach(keyValues, (kv) => {
+        object[kv.key] = kv.value()
+      })
+      return object
+    }
+    objectFn.literal = true
+    objectFn.constant = true
+    return objectFn
+  }
+
+
+//primary method which will return as finally result
   primary() {
     let primary
     if (this.expect('[')) {
       primary = this.arrayDeclaration()
+    } else if (this.expect('{')) {
+      primary = this.object()
     } else {
       let token = this.expect()
       primary = token.fn
@@ -107,11 +136,11 @@ class Lexer {
 
     while (this.index < this.text.length) {
       this.ch = this.text.charAt(this.index)
-      if (this.isNumber(this.ch) || (this.ch === '.' && this.isNumber(this.peek()))) {
+      if (this.isNumber(this.ch) || (this.is('.') && this.isNumber(this.peek()))) {
         this.readNumber()
-      } else if (this.ch === '\'' || this.ch === '"') {
+      } else if (this.is('\'"')) {
         this.readString(this.ch)
-      } else if (this.ch === '[' || this.ch === ']' || this.ch === ',') {
+      } else if (this.is('[],{}:')) {
         this.tokens.push({
           text: this.ch
         })
@@ -143,6 +172,10 @@ class Lexer {
 
   isWhitespace(ch) {
     return (ch === ' ' || ch === '\r' || ch === '\t'  || ch === '\n' || ch === '\v' || ch === '\u00A0')
+  }
+
+  is(chs) {
+    return chs.indexOf(this.ch) >= 0
   }
 
 //some methods for traversal text
@@ -206,6 +239,7 @@ class Lexer {
         this.index++
         this.tokens.push({
           text: rawString,
+          string: string,
           constant: true,
           fn: _.constant(string)
         })
