@@ -29,8 +29,8 @@
     "karma": "^0.13.22",
     "karma-coverage": "^0.5.5",
     "karma-jasmine": "^0.3.8",
+    "karma-mocha-reporter": "^2.0.3",
     "karma-phantomjs-launcher": "^1.0.0",
-    "karma-spec-reporter": "0.0.26",
     "phantomjs-prebuilt": "^2.1.7"
   },
   "dependencies": {
