@@ -115,6 +115,55 @@ _.forEach(CONSTANTS, (fn, constantName) => {
   fn.constant = fn.literal = true
 })
 
+//parse context
+let simpleGetterFn1 = (key) => {
+  return function(scope, locals) {
+    if (!scope) {
+      return undefined
+    }
+    return (locals && locals.hasOwnProperty(key) ? locals[key] : scope[key])
+  }
+}
+
+let simpleGetterFn2 = (key1, key2) => {
+  return function(scope, locals) {
+    if (!scope) {
+      return undefined
+    }
+    scope = (locals && locals.hasOwnProperty(key1)) ? locals[key1] : scope[key1]
+    return scope ? scope[key2] : undefined
+  }
+}
+
+let generatedGetterFn = (keys) => {
+  return function(scope, locals) {
+    if (!scope) {
+      return undefined
+    }
+    _.forEach(keys, (key, idx) => {
+      if (!scope) { return undefined }
+      if (idx === 0) {
+        scope = (locals && locals.hasOwnProperty(key)) ? locals[key] : scope[key]
+      } else {
+        scope = scope[key]
+      }
+    })
+    return scope
+  }
+}
+
+let getterFn = _.memoize((ident) => {
+  let pathKeys = ident.split('.')
+  if (pathKeys.length === 1) {
+    return simpleGetterFn1(pathKeys[0])
+  } else if(pathKeys === 2) {
+    return simpleGetterFn2(pathKeys[0], pathKeys[1])
+  } else {
+    return generatedGetterFn(pathKeys)
+  }
+})
+
+
 //defined a lexer class
 class Lexer {
   constructor() {
@@ -258,7 +307,7 @@ class Lexer {
     let text = ''
     while (this.index < this.text.length) {
       let ch = this.text.charAt(this.index)
-      if (this.isIden(ch) || this.isNumber(ch)) {
+      if (this.isIden(ch) || this.isNumber(ch) || ch === '.') {
         text += ch
       } else {
         break
@@ -268,7 +317,7 @@ class Lexer {
 
     let token = {
       text: text,
-      fn: CONSTANTS[text]
+      fn: CONSTANTS[text] || getterFn(text)
     }
 
     this.tokens.push(token)
