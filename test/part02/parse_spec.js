@@ -158,4 +158,9 @@ describe('parse', function() {
     var fn = parse('{"a key": 1, \'another-key\': 2}')
     expect(fn()).toEqual({'a key': 1, 'another-key': 2})
   })
+  
+  it('makes objects non-constant when they contain non-constants', function() {
+    expect(parse('{a: 1, b: c}').constant).toBe(false)
+    expect(parse('{a: 1, b: {c: d}}').constant).toBe(false)
+  })
 })

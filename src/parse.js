@@ -1,5 +1,38 @@
 'use strict'
 
+//some helper methods
+//disabled window, DOM-element and constructor
+//varible
+const CALL = Function.prototype.call
+const APPLY = Function.prototype.apply
+const BIND = Function.prototype.bind
+
+const ensureSafeObject = (obj) => {
+  if (obj) {
+    if (obj.document && obj.location && obj.alert && obj.setInterval) {
+      throw 'referencing window in angular expressions is disabled! '
+    } else if (obj.children && (obj.nodeName || (obj.prop && obj.attr && obj.find))) {
+      throw 'referencing DOM nodes in angular expressions is disabled! '
+    } else if (obj.constructor === obj) {
+      throw 'referencing Function in angular expressions is disabled! '
+    } else if (obj.getOwnPropertyNames || obj.getOwnPropertyDescriptor) {
+      throw 'reference Object in angular expressions is disabled! '
+    }
+  }
+  return obj
+}
+
+const ensureSafeFunction = (obj) => {
+  if (obj) {
+    if (obj.constructor === obj) {
+      throw 'referencing Function in angular expressions is disabled! '
+    } else if (obj === CALL || obj === APPLY || obj === BIND) {
+      throw 'referencing call, apply and bind in angular expressions' + obj + 'is disabled! '
+    }
+  }
+  return obj
+}
+
 //defined a parser class
 class Parser {
   constructor(lexer) {
@@ -9,13 +42,13 @@ class Parser {
   parse(text) {
     this.tokens = this.lexer.lex(text)
     //_.first get the first item in the array
-    return this.primary()
+    return this.assignment()
   }
 
 
 //some helper methods
-  expect(e) {
-    let token = this.peek(e)
+  expect(e1, e2, e3, e4) {
+    let token = this.peek(e1, e2, e3, e4)
     if (token) {
       return this.tokens.shift()
     }
@@ -27,10 +60,10 @@ class Parser {
     }
   }
 
-  peek(e) {
+  peek(e1, e2, e3, e4) {
     if (this.tokens.length > 0) {
       let text = this.tokens[0].text
-      if (text === e || !e) {
+      if (text === e1 || text === e2 || text === e3 || text === e4 || (!e1 && !e2 && !e3 && !e4)) {
         return this.tokens[0]
       }
     }
@@ -47,14 +80,14 @@ class Parser {
       } while (this.expect(','));
     }
     this.consume(']')
-    let arrayFn = () => {
+    let arrayFn = (scope, locals) => {
       let elements = _.map(elementFns, (elementFn) => {
-        return elementFn()
+        return elementFn(scope, locals)
       })
       return elements
     }
     arrayFn.literal = true
-    arrayFn.constant = true
+    arrayFn.constant = _.every(elementFns, 'constant')
     return arrayFn
   }
 
@@ -69,16 +102,78 @@ class Parser {
       } while (this.expect(','));
     }
     this.consume('}')
-    let objectFn = () => {
+    let objectFn = (scope, locals) => {
       let object = {}
       _.forEach(keyValues, (kv) => {
-        object[kv.key] = kv.value()
+        object[kv.key] = kv.value(scope, locals)
       })
       return object
     }
     objectFn.literal = true
-    objectFn.constant = true
+    objectFn.constant = _.every(keyValues, 'constant')
     return objectFn
+  }
+
+  objectIndex(objFn) {
+    let indexFn = this.primary()
+    this.consume(']')
+    let objectIndexFn = (scope, locals) => {
+      let obj = objFn(scope, locals)
+      let index = indexFn(scope, locals)
+      return ensureSafeObject(obj[index])
+    }
+    objectIndexFn.assign = (self, value, locals) => {
+      let obj = ensureSafeObject(objFn(self, locals))
+      let index = indexFn(self, locals)
+      return (obj[index] = value)
+    }
+    return objectIndexFn
+  }
+
+  fieldAccess(objFn) {
+    let token = this.expect()
+    let getter = token.fn
+    let fieldAccessFn = (scope, locals) => {
+      let obj = objFn(scope, locals)
+      return getter(obj)
+    }
+    fieldAccessFn.assign = (self, value, locals) => {
+      let obj = objFn(self, locals)
+      return setter(obj, token.text, value)
+    }
+    return fieldAccessFn
+  }
+
+  functionCall(fnFn, contextFn) {
+    let argFns = []
+    if (!this.peek(')')) {
+      do {
+        argFns.push(this.primary())
+      } while (this.expect(','));
+    }
+    this.consume(')')
+    return function(scope, locals) {
+      let context = ensureSafeObject(contextFn ? contextFn(scope, locals) : scope)
+      let fn = ensureSafeFunction(fnFn(scope, locals))
+      let args = _.map(argFns, (argFn) => {
+        return argFn(scope, locals)
+      })
+      return ensureSafeObject(fn.apply(context, args))
+    }
+  }
+
+  assignment() {
+    let left = this.primary()
+    if (this.expect('=')) {
+      if (!left.assign) {
+        throw 'Implies assignment but cannot be assigned to '
+      }
+      let right = this.primary()
+      return function(scope, locals) {
+        return left.assign(scope, right(scope, locals), locals)
+      }
+    }
+    return left
   }
 
 
@@ -95,6 +190,21 @@ class Parser {
       if (token.constant) {
         primary.constant = true
         primary.literal = true
+      }
+    }
+
+    let next
+    let context
+    while ((next = this.expect('[', '.', '('))) {
+      if (next.text === '[') {
+        context = primary
+        primary = this.objectIndex(primary)
+      } else if (next.text === '.') {
+        context = primary
+        primary = this.fieldAccess(primary)
+      } else if (next.text === '(') {
+        primary = this.functionCall(primary, context)
+        context = undefined
       }
     }
     return primary
@@ -116,7 +226,15 @@ _.forEach(CONSTANTS, (fn, constantName) => {
 })
 
 //parse context
-let simpleGetterFn1 = (key) => {
+//ensure safe member name
+const ensureSafeMemberName = (name) => {
+  if (name === 'constructor' || name === '__proto__' || name === '__defineGetter__' || name === '__defineSetter__' || name === '__lookupGetter__' || name === '__lookupSetter__') {
+    throw 'Attempting to access a disabled field in angular expressions! '
+  }
+}
+
+const simpleGetterFn1 = (key) => {
+  ensureSafeMemberName(key)
   return function(scope, locals) {
     if (!scope) {
       return undefined
@@ -125,7 +243,9 @@ let simpleGetterFn1 = (key) => {
   }
 }
 
-let simpleGetterFn2 = (key1, key2) => {
+const simpleGetterFn2 = (key1, key2) => {
+  ensureSafeMemberName(key1)
+  ensureSafeMemberName(key2)
   return function(scope, locals) {
     if (!scope) {
       return undefined
@@ -135,12 +255,13 @@ let simpleGetterFn2 = (key1, key2) => {
   }
 }
 
-let generatedGetterFn = (keys) => {
+const generatedGetterFn = (keys) => {
   return function(scope, locals) {
     if (!scope) {
       return undefined
     }
     _.forEach(keys, (key, idx) => {
+      ensureSafeMemberName(key)
       if (!scope) { return undefined }
       if (idx === 0) {
         scope = (locals && locals.hasOwnProperty(key)) ? locals[key] : scope[key]
@@ -152,15 +273,34 @@ let generatedGetterFn = (keys) => {
   }
 }
 
-let getterFn = _.memoize((ident) => {
-  let pathKeys = ident.split('.')
-  if (pathKeys.length === 1) {
-    return simpleGetterFn1(pathKeys[0])
-  } else if(pathKeys === 2) {
-    return simpleGetterFn2(pathKeys[0], pathKeys[1])
-  } else {
-    return generatedGetterFn(pathKeys)
+const setter = (object, path, value) => {
+  let keys = path.split('.')
+  while (keys.length > 1) {
+    let key = keys.shift()
+    ensureSafeMemberName(key)
+    if (!object.hasOwnProperty(key)) {
+      object[key] = {}
+    }
+    object = object[key]
   }
+  object[keys.shift()] = value
+  return value
+}
+
+const getterFn = _.memoize((ident) => {
+  let pathKeys = ident.split('.')
+  let fn
+  if (pathKeys.length === 1) {
+    fn = simpleGetterFn1(pathKeys[0])
+  } else if(pathKeys === 2) {
+    fn = simpleGetterFn2(pathKeys[0], pathKeys[1])
+  } else {
+    fn = generatedGetterFn(pathKeys)
+  }
+  fn.assign = (self, value) => {
+    return setter(self, ident, value)
+  }
+  return fn
 })
 
 
@@ -189,7 +329,7 @@ class Lexer {
         this.readNumber()
       } else if (this.is('\'"')) {
         this.readString(this.ch)
-      } else if (this.is('[],{}:')) {
+      } else if (this.is('[],{}:.()=')) {
         this.tokens.push({
           text: this.ch
         })
@@ -305,14 +445,33 @@ class Lexer {
 
   readIdent() {
     let text = ''
+    let start = this.index
+    let lastDotAt
     while (this.index < this.text.length) {
       let ch = this.text.charAt(this.index)
       if (this.isIden(ch) || this.isNumber(ch) || ch === '.') {
+        if (ch === '.') {
+          lastDotAt = this.index
+        }
         text += ch
       } else {
         break
       }
       this.index++
+    }
+
+    let methodName
+    let peekIndex
+    if (lastDotAt) {
+      peekIndex = this.index
+      while (this.isWhitespace(this.text.charAt(peekIndex))) {
+        peekIndex++
+      }
+      if (this.text.charAt(peekIndex) === '(') {
+        //注意this.text与text指代不同的值
+        methodName = text.substring(lastDotAt - start + 1)
+        text = text.substring(0, lastDotAt - start)
+      }
     }
 
     let token = {
@@ -321,6 +480,16 @@ class Lexer {
     }
 
     this.tokens.push(token)
+
+    if (methodName) {
+      this.tokens.push({
+        text: '.'
+      })
+      this.tokens.push({
+        text: methodName,
+        fn: getterFn(methodName)
+      })
+    }
   }
 }
 
