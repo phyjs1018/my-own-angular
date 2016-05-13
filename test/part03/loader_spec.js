@@ -221,6 +221,83 @@ describe('setupModuleLoader', function() {
 
         expect(injector.annotate(fn)).toEqual(['a', 'b'])
       })
+      
+      //dependency annotation from function arguments
+      it('returns an empty array for a non-annotated 0-arg function', function() {
+        var injector =createInjector([])
+        
+        var fn = function() { }
+        
+        expect(injector.annotate(fn)).toEqual([])
+      })
+      
+      it('returns annotation parsed from function args when not annotated', function() {
+        var injector = createInjector([])
+        
+        var fn = function(a, b) { }
+        
+        expect(injector.annotate(fn)).toEqual(['a', 'b'])
+      })
+      
+      it('strips comments from argument lists when parsing', function() {
+        var injector = createInjector([])
+        
+        var fn = function(a, /*b, */ c) { }
+        
+        expect(injector.annotate(fn)).toEqual(['a', 'c'])
+      })
+      
+      //strict mode
+      it('throw when using a non-annotated fn in a strict mode', function() {
+        var injector = createInjector([], true)
+        
+        var fn = function(a, b, c) { }
+        
+        expect(function() {
+          injector.annotate(fn)
+        }).toThrow()
+      })
+      
+      //interating annotation with invocation
+      it('invokes an array-annotated function with dependency injection', function() {
+        var module = angular.module('myModule', [])
+        module.constant('a', 1)
+        module.constant('b', 2)
+        var injector = createInjector(['myModule'])
+        
+        var fn = ['a', 'b', function(one, two) { return one + two }]
+        
+        expect(injector.invoke(fn)).toBe(3)
+      })
+      
+      it('instantiates an annotated constructor function', function() {
+        var module = angular.module('myModule', [])
+        module.constant('a', 1)
+        module.constant('b', 2)
+        var injector = createInjector(['myModule'])
+        
+        function Type(one, two) {
+          this.result = one + two
+        }
+        Type.$inject = ['a', 'b']
+        
+        var instance = injector.instantiate(Type)
+        expect(instance.result).toBe(3)
+      })
+      
+      it('uses the prototype of the constructor when instantiating', function() {
+        function BaseType() { }
+        BaseType.prototype.getValue = _.constant(42)
+        
+        function Type() { this.v = this.getValue() }
+        Type.prototype = BaseType.prototype
+        
+        var module = angular.module('myModule', [])
+        var injector = createInjector(['myModule'])
+        
+        var instance = injector.instantiate(Type)
+        expect(instance.v).toBe(42)
+      })
     })
   })
 })
