@@ -49,11 +49,10 @@ module.exports = function(config) {
 
     // optionally, configure the reporter
     coverageReporter: {
-      type : 'html',
-      dir : 'coverage/',
-      instrumenterOptions: {
-        istanbul: { noCompact: true }
-      }
+      reporters: [
+        {type: 'html', dir: 'coverage/'},
+        {type: 'text'}
+      ]
     },
 
     // web server port
