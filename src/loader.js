@@ -13,9 +13,9 @@ const setupModuleLoader = (window) => {
     }
     let invokeQueue = []
     
-    const invokeLater = (method) => {
+    const invokeLater = (method, arrayMethod) => {
       return function() {
-        invokeQueue.push([method, arguments])
+        invokeQueue[arrayMethod || 'push']([method, arguments])
         //chain
         return moduleInstance
       }
@@ -23,7 +23,7 @@ const setupModuleLoader = (window) => {
     let moduleInstance = {
       name,
       requires,
-      constant: invokeLater('constant'),
+      constant: invokeLater('constant', 'unshift'),
       provider: invokeLater('provider'),
       _invokeQueue: invokeQueue
     }
