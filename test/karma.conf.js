@@ -16,7 +16,6 @@ module.exports = function(config) {
       'karma-jasmine',
       'karma-phantomjs-launcher',
       'karma-coverage',
-      'karma-mocha-reporter'
     ],
 
     // list of files / patterns to load in the browser
@@ -28,17 +27,7 @@ module.exports = function(config) {
     ],
 
     // coverage reporter generates the coverage
-    reporters: ['progress', 'coverage', 'mocha'],
-    
-     // reporter options 
-    mochaReporter: {
-      colors: {
-        success: 'blue',
-        info: 'bgGreen',
-        warning: 'cyan',
-        error: 'bgRed'
-      }
-    },
+    reporters: ['progress', 'coverage'],
     
     preprocessors: {
       // source files, that you wanna generate coverage for
