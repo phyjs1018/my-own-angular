@@ -8,7 +8,7 @@
   },
   "scripts": {
     "compile": "gulp compile",
-    "test": "karma start test/karma.conf.js"
+    "test": "gulp compile && karma start test/karma.conf.js"
   },
   "repository": {
     "type": "git",
