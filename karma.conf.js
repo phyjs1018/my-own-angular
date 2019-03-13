@@ -22,7 +22,6 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       './node_modules/lodash/lodash.js',
-      './node_modules/jquery/dist/jquery.js',
       './dist/**/*.js',
       './test/**/*.js'
     ],
@@ -58,6 +57,6 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: [/*'PhantomJS'*/'Chrome']
+    browsers: ['Chrome']
   })
 }
